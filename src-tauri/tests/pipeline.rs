@@ -51,3 +51,28 @@ async fn missing_file_is_internal() {
     let err = process_with_timeout("does/not/exist.mp3".into()).await.unwrap_err();
     assert_eq!(err.code, ErrorCode::Internal);
 }
+
+/// Perf check: a 4-minute 320k stereo MP3 must process in < 4 s (release build).
+/// `FFMPEG=/path/to/ffmpeg cargo test --release --test pipeline perf_4min -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn perf_4min() {
+    let path = std::env::temp_dir().join("hires_perf_4min.mp3");
+    if !path.exists() {
+        let ffmpeg = std::env::var("FFMPEG").unwrap_or_else(|_| "ffmpeg".into());
+        let status = std::process::Command::new(ffmpeg)
+            .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i"])
+            .arg("anoisesrc=color=pink:sample_rate=44100:amplitude=0.1:duration=240:seed=7")
+            .args(["-ac", "2", "-c:a", "libmp3lame", "-b:a", "320k"])
+            .arg(&path)
+            .status()
+            .expect("run ffmpeg (set FFMPEG)");
+        assert!(status.success(), "ffmpeg failed");
+    }
+    let src = std::fs::read(&path).unwrap();
+    let start = std::time::Instant::now();
+    let t = process(src, "perf_4min", &AtomicBool::new(false)).unwrap();
+    let elapsed = start.elapsed();
+    println!("perf_4min: process() took {elapsed:?} (duration {} ms)", t.duration_ms);
+    assert!(elapsed.as_secs_f64() < 4.0, "too slow: {elapsed:?}");
+}
