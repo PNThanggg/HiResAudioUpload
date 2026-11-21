@@ -109,6 +109,13 @@ pub async fn process_with_timeout(path: PathBuf) -> Result<ProcessedTrack, Pipel
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default();
+    process_bytes_with_timeout(source, stem).await
+}
+
+pub async fn process_bytes_with_timeout(
+    source: Vec<u8>,
+    stem: String,
+) -> Result<ProcessedTrack, PipelineError> {
     let cancel = Arc::new(AtomicBool::new(false));
     let flag = cancel.clone();
     let task = tokio::task::spawn_blocking(move || process(source, &stem, &flag));

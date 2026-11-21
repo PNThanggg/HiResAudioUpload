@@ -8,8 +8,9 @@ use tokio::sync::{RwLock, Semaphore};
 use tokio::task::JoinSet;
 
 use crate::catalog::{AddOutcome, Library, LibraryError, TagEdit, TrackRecord, TrackSummary};
-use crate::error::PipelineError;
-use crate::pipeline::{process_with_timeout, sha256_hex};
+use crate::error::{ErrorCode, PipelineError};
+use crate::pipeline::probe::check_size;
+use crate::pipeline::{process_bytes_with_timeout, sha256_hex};
 use crate::r2::R2Storage;
 use crate::settings::{self, Settings};
 
@@ -88,15 +89,19 @@ async fn process_one(
     emit: &(dyn Fn(UploadProgress) + Send + Sync),
 ) -> UploadProgress {
     let read_path = path.to_path_buf();
-    let hashed = tokio::task::spawn_blocking(move || {
-        std::fs::read(read_path).map(|bytes| sha256_hex(&bytes))
+    let read = tokio::task::spawn_blocking(move || -> Result<(String, Vec<u8>), PipelineError> {
+        let cannot = |e: std::io::Error| {
+            PipelineError::new(ErrorCode::Internal, format!("cannot read file: {e}"))
+        };
+        let len = std::fs::metadata(&read_path).map_err(cannot)?.len();
+        check_size(len)?;
+        let bytes = std::fs::read(&read_path).map_err(cannot)?;
+        Ok((sha256_hex(&bytes), bytes))
     })
     .await;
-    let hash = match hashed {
-        Ok(Ok(h)) => h,
-        Ok(Err(e)) => {
-            return UploadProgress::error(path, "INTERNAL", format!("cannot read file: {e}"));
-        }
+    let (hash, bytes) = match read {
+        Ok(Ok(v)) => v,
+        Ok(Err(e)) => return UploadProgress::error(path, &pipeline_code(&e), e.message),
         Err(e) => return UploadProgress::error(path, "INTERNAL", e.to_string()),
     };
     match library.find_by_source(&hash).await {
@@ -106,7 +111,11 @@ async fn process_one(
         Ok(None) => {}
         Err(e) => return UploadProgress::error(path, e.code(), e.to_string()),
     }
-    let processed = match process_with_timeout(path.to_path_buf()).await {
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let processed = match process_bytes_with_timeout(bytes, stem).await {
         Ok(p) => p,
         Err(e) => return UploadProgress::error(path, &pipeline_code(&e), e.message),
     };

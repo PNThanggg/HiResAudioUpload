@@ -34,7 +34,7 @@ fn finds_frame_after_padding_and_footer() {
     let audio = &src[id3v2_len(&src)..];
     let mut b = vec![b'I', b'D', b'3', 4, 0, 0x10, 0, 0, 0, 10];
     b.resize(30, 0); // 10 hdr + 10 body + 10 footer
-    b.extend(std::iter::repeat(0u8).take(3000));
+    b.extend(std::iter::repeat_n(0u8, 3000));
     b.extend_from_slice(audio);
     assert_eq!(read_gapless(&b), read_gapless(&src));
     assert_eq!(first_frame(&b).unwrap().bitrate_kbps, 128);

@@ -28,10 +28,12 @@ pub trait Storage: Send + Sync {
     async fn delete(&self, key: &str) -> anyhow::Result<()>;
 }
 
+type StoredObject = (Vec<u8>, String, String);
+
 /// In-memory `Storage` for tests and UI mocks.
 #[derive(Default)]
 pub struct MemoryStorage {
-    objects: Mutex<BTreeMap<String, (Vec<u8>, String, String)>>,
+    objects: Mutex<BTreeMap<String, StoredObject>>,
     /// When set, puts whose key contains this substring fail.
     pub fail_puts_matching: Mutex<Option<String>>,
 }
@@ -60,10 +62,10 @@ impl Storage for MemoryStorage {
         content_type: &str,
         cache_control: &str,
     ) -> anyhow::Result<()> {
-        if let Some(pat) = self.fail_puts_matching.lock().unwrap().as_deref() {
-            if key.contains(pat) {
-                anyhow::bail!("injected put failure for {key}");
-            }
+        if let Some(pat) = self.fail_puts_matching.lock().unwrap().as_deref()
+            && key.contains(pat)
+        {
+            anyhow::bail!("injected put failure for {key}");
         }
         self.objects.lock().unwrap().insert(
             key.to_string(),
@@ -360,10 +362,10 @@ impl Library {
         if let Err(e) = rest {
             let _ = self.storage.delete(&audio_key).await;
             let _ = self.storage.delete(&meta_key(&p.id)).await;
-            if let Some(k) = &cover_key {
-                if !cover_refs(&cat.tracks, k) {
-                    let _ = self.storage.delete(k).await;
-                }
+            if let Some(k) = &cover_key
+                && !cover_refs(&cat.tracks, k)
+            {
+                let _ = self.storage.delete(k).await;
             }
             return Err(e);
         }
@@ -424,10 +426,11 @@ impl Library {
         cat.tracks[idx] = t.clone();
         self.save(cat.clone()).await?;
 
-        if let Some(old) = old_cover {
-            if t.cover_key.as_deref() != Some(old.as_str()) && !cover_refs(&cat.tracks, &old) {
-                let _ = self.storage.delete(&old).await;
-            }
+        if let Some(old) = old_cover
+            && t.cover_key.as_deref() != Some(old.as_str())
+            && !cover_refs(&cat.tracks, &old)
+        {
+            let _ = self.storage.delete(&old).await;
         }
         Ok(t)
     }
@@ -450,10 +453,11 @@ impl Library {
         for t in &removed {
             let _ = self.storage.delete(&t.audio_key).await;
             let _ = self.storage.delete(&meta_key(&t.id)).await;
-            if let Some(k) = &t.cover_key {
-                if seen.insert(k.clone()) && !cover_refs(&cat.tracks, k) {
-                    let _ = self.storage.delete(k).await;
-                }
+            if let Some(k) = &t.cover_key
+                && seen.insert(k.clone())
+                && !cover_refs(&cat.tracks, k)
+            {
+                let _ = self.storage.delete(k).await;
             }
         }
         Ok(())

@@ -105,7 +105,7 @@ pub fn analyze(bytes: &[u8], cancel: &AtomicBool) -> Result<Analysis, PipelineEr
         return Err(PipelineError::new(ErrorCode::TooShort, "decoded audio is shorter than 1 s"));
     }
     let integrated_lufs = meter.loudness_global().map_err(internal)?;
-    if !(integrated_lufs >= -70.0) {
+    if integrated_lufs.is_nan() || integrated_lufs < -70.0 {
         return Err(PipelineError::new(ErrorCode::Silent, "integrated loudness below -70 LUFS"));
     }
     let lra = meter.loudness_range().map_err(internal)?;

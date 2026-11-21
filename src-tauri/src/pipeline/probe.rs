@@ -95,10 +95,10 @@ pub fn probe(bytes: &[u8], file_stem: &str) -> Result<Probed, PipelineError> {
         ));
     }
     let gapless = read_gapless(bytes);
-    if let Some(g) = &gapless {
-        if g.total_samples / u64::from(header.sample_rate) > MAX_SECONDS {
-            return Err(PipelineError::new(ErrorCode::TooLarge, "duration exceeds 2 hours"));
-        }
+    if let Some(g) = &gapless
+        && g.total_samples / u64::from(header.sample_rate) > MAX_SECONDS
+    {
+        return Err(PipelineError::new(ErrorCode::TooLarge, "duration exceeds 2 hours"));
     }
 
     let tag = read_tag(bytes);
@@ -130,10 +130,10 @@ pub fn probe(bytes: &[u8], file_stem: &str) -> Result<Probed, PipelineError> {
             .iter()
             .find(|p| p.pic_type() == PictureType::CoverFront)
             .or_else(|| pics.first());
-        if let Some(p) = pic {
-            if let Some((ext, mime)) = sniff_image(p.data()) {
-                cover = Some(Cover { bytes: p.data().to_vec(), ext, mime });
-            }
+        if let Some(p) = pic
+            && let Some((ext, mime)) = sniff_image(p.data())
+        {
+            cover = Some(Cover { bytes: p.data().to_vec(), ext, mime });
         }
     }
     Ok(Probed { header, gapless, tags, cover })

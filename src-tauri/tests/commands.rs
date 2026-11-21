@@ -61,3 +61,24 @@ async fn batch_emits_one_terminal_event_per_file() {
 
     assert_eq!(lib.list().await.unwrap().len(), 2);
 }
+
+#[tokio::test]
+async fn oversized_file_is_rejected_before_reading() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("huge.mp3");
+    std::fs::File::create(&path)
+        .unwrap()
+        .set_len(hires_upload_lib::pipeline::probe::MAX_BYTES + 1)
+        .unwrap();
+    let lib = Arc::new(Library::new(
+        Arc::new(MemoryStorage::default()),
+        "https://cdn.example.com".to_string(),
+    ));
+    let events: Arc<Mutex<Vec<UploadProgress>>> = Arc::default();
+    let sink = events.clone();
+    run_batch(vec![path], lib, move |e| sink.lock().unwrap().push(e)).await;
+    let ev = events.lock().unwrap().clone();
+    let last = ev.last().unwrap();
+    assert_eq!(last.stage, UploadStage::Error);
+    assert_eq!(last.error_code.as_deref(), Some("TOO_LARGE"));
+}

@@ -224,7 +224,7 @@ async fn shared_cover_survives_single_delete() {
     lib.update(&b.id, edit("b"), Some(img)).await.unwrap();
     assert_eq!(covers(&st).len(), 1);
 
-    lib.delete(&[a.id.clone()]).await.unwrap();
+    lib.delete(std::slice::from_ref(&a.id)).await.unwrap();
     assert_eq!(covers(&st).len(), 1);
     assert!(!st.keys().contains(&format!("audio/{}.mp3", a.id)));
     assert!(!st.keys().contains(&format!("meta/{}.json", a.id)));
