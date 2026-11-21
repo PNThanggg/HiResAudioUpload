@@ -218,6 +218,7 @@ pub async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String
 #[tauri::command]
 pub async fn save_settings(state: State<'_, AppState>, s: Settings) -> Result<(), String> {
     let s = resolve_incoming(&state, s).await;
+    s.validate()?;
     settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
     let mut current = state.settings.write().await;
     if *current == s {
@@ -236,6 +237,7 @@ pub async fn save_settings(state: State<'_, AppState>, s: Settings) -> Result<()
 #[tauri::command]
 pub async fn test_connection(state: State<'_, AppState>, s: Settings) -> Result<(), String> {
     let s = resolve_incoming(&state, s).await;
+    s.validate()?;
     R2Storage::new(&s)
         .await
         .test_connection()

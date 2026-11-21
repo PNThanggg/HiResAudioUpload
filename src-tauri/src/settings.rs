@@ -37,6 +37,16 @@ impl Settings {
         .all(|f| !f.trim().is_empty())
     }
 
+    /// Rejects a non-empty `public_base_url` that is not an `http://` or `https://` URL.
+    pub fn validate(&self) -> Result<(), String> {
+        let url = self.public_base_url.trim().to_ascii_lowercase();
+        if url.is_empty() || url.starts_with("http://") || url.starts_with("https://") {
+            Ok(())
+        } else {
+            Err("Public base URL phải bắt đầu bằng http:// hoặc https://".to_string())
+        }
+    }
+
     /// Returns a copy whose secret is hidden except for its last 4 characters.
     pub fn masked(&self) -> Settings {
         let n = self.secret_access_key.chars().count();

@@ -62,3 +62,14 @@ fn save_then_load_roundtrip() {
     let text = std::fs::read_to_string(&p).unwrap();
     assert!(text.contains("accountId"));
 }
+
+#[test]
+fn validate_requires_http_public_base_url() {
+    assert!(sample().validate().is_ok());
+    assert!(Settings { public_base_url: "HTTP://cdn.x.com".into(), ..sample() }.validate().is_ok());
+    assert!(Settings { public_base_url: "".into(), ..sample() }.validate().is_ok());
+    for bad in ["cdn.x.com", "ftp://cdn.x.com", "javascript:alert(1)", "https:/x"] {
+        let e = Settings { public_base_url: bad.into(), ..sample() }.validate().unwrap_err();
+        assert!(e.contains("http://"), "{bad}: {e}");
+    }
+}
