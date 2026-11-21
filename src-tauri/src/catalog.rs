@@ -381,22 +381,18 @@ impl Library {
         let mut next = cat.clone();
         next.tracks.push(summary.clone());
         if let Err(e) = self.save(next).await {
-            // The PUT may have been committed even though we saw an error: only roll back
-            // when the catalog provably lacks the track. A dangling entry is worse than orphans.
+            // The PUT may still commit after we saw the error, so the staged objects are never
+            // deleted here: orphans are harmless, a catalog entry without its audio is not.
+            // A retry reuses the same keys, so it overwrites them or reports a duplicate.
             match self.load().await {
                 Ok(now) if now.tracks.iter().any(|t| t.id == p.id) => {}
-                Ok(_) => {
-                    self.roll_back_add(&cat, &p.id, &audio_key, cover_key.as_deref())
-                        .await;
-                    return Err(e);
-                }
-                Err(_) => return Err(e),
+                _ => return Err(e),
             }
         }
         Ok(AddOutcome::Added(summary))
     }
 
-    /// Deletes the objects of an add whose catalog entry was never written.
+    /// Deletes the objects of an add that failed before its catalog save was attempted.
     async fn roll_back_add(
         &self,
         cat: &Catalog,
@@ -442,7 +438,8 @@ impl Library {
             .ok_or_else(|| LibraryError::NotFound(format!("track {id} not found")))?;
         let waveform = self.detail(id).await?.waveform;
 
-        let old_cover = cat.tracks[idx].cover_key.clone();
+        let old = cat.tracks[idx].clone();
+        let old_cover = old.cover_key.clone();
         let mut t = cat.tracks[idx].clone();
         t.title = title;
         t.artist = clean(edit.artist);
@@ -461,11 +458,26 @@ impl Library {
 
         self.put_meta(&TrackRecord {
             summary: t.clone(),
-            waveform,
+            waveform: waveform.clone(),
         })
         .await?;
         cat.tracks[idx] = t.clone();
-        self.save(cat.clone()).await?;
+        if let Err(e) = self.save(cat.clone()).await {
+            // Unless the catalog did take the edit, put the old meta back so the detail view
+            // matches the catalog. A new cover object is kept: an orphan is harmless.
+            match self.load().await {
+                Ok(now) if now.tracks.contains(&t) => {}
+                _ => {
+                    let _ = self
+                        .put_meta(&TrackRecord {
+                            summary: old,
+                            waveform,
+                        })
+                        .await;
+                    return Err(e);
+                }
+            }
+        }
 
         if let Some(old) = old_cover
             && t.cover_key.as_deref() != Some(old.as_str())

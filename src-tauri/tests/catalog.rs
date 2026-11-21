@@ -126,14 +126,22 @@ async fn find_by_source_after_add() {
 async fn failed_put_leaves_catalog_unchanged() {
     let (st, lib) = setup();
     *st.fail_puts_matching.lock().unwrap() = Some("catalog.json".to_string());
-    assert!(lib.add(track("cover_small")).await.is_err());
-    assert!(
-        !st.keys()
-            .iter()
-            .any(|k| k.starts_with("audio/") || k.starts_with("meta/") || k.starts_with("cover/")),
-        "leftover keys: {:?}",
-        st.keys()
-    );
+    let p = track("cover_small");
+    assert!(lib.add(p.clone()).await.is_err());
+    assert!(lib.list().await.unwrap().is_empty());
+    // The catalog PUT could still commit late, so staged objects are kept, not deleted.
+    assert!(st.keys().contains(&format!("audio/{}.mp3", p.id)));
+
+    *st.fail_puts_matching.lock().unwrap() = None;
+    let t = added(lib.add(p.clone()).await.unwrap()); // retry reuses the same keys
+    assert_eq!(lib.list().await.unwrap(), vec![t]);
+    lib.delete(std::slice::from_ref(&p.id)).await.unwrap();
+    assert_eq!(st.keys(), vec!["catalog.json".to_string()]);
+
+    // A failure before the catalog save (cover/meta put) still rolls back the audio.
+    *st.fail_puts_matching.lock().unwrap() = Some("meta/".to_string());
+    assert!(lib.add(p).await.is_err());
+    assert_eq!(st.keys(), vec!["catalog.json".to_string()]);
 
     *st.fail_puts_matching.lock().unwrap() = None;
     lib.add(track("pink_128")).await.unwrap();
@@ -258,6 +266,26 @@ async fn ambiguous_catalog_save_keeps_objects() {
         assert!(keys.contains(&k), "missing {k}");
     }
     assert_eq!(lib.detail(&p.id).await.unwrap().summary, t);
+}
+
+#[tokio::test]
+async fn failed_update_keeps_meta_in_sync_with_catalog() {
+    let (st, lib) = setup();
+    let t = added(lib.add(track("pink_128")).await.unwrap());
+
+    *st.fail_puts_matching.lock().unwrap() = Some("catalog.json".to_string());
+    assert!(lib.update(&t.id, edit("Changed"), None).await.is_err());
+    *st.fail_puts_matching.lock().unwrap() = None;
+    assert_eq!(lib.list().await.unwrap(), vec![t.clone()]);
+    assert_eq!(lib.detail(&t.id).await.unwrap().summary, t);
+
+    // A save that committed but reported an error counts as done.
+    *st.fail_after_puts_matching.lock().unwrap() = Some("catalog.json".to_string());
+    let u = lib.update(&t.id, edit("Changed"), None).await.unwrap();
+    *st.fail_after_puts_matching.lock().unwrap() = None;
+    assert_eq!(u.title, "Changed");
+    assert_eq!(lib.list().await.unwrap(), vec![u.clone()]);
+    assert_eq!(lib.detail(&t.id).await.unwrap().summary, u);
 }
 
 /// Yields to the scheduler before every call so concurrent library operations interleave.
