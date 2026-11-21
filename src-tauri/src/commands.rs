@@ -228,16 +228,23 @@ pub async fn save_settings(state: State<'_, AppState>, mut s: Settings) -> Resul
     let s = s.normalize();
     s.validate()?;
     settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
-    if *current == s {
-        return Ok(());
+    if *current != s {
+        let library = if s.is_complete() {
+            Some(build_library(&s, &state.catalog_lock).await)
+        } else {
+            None
+        };
+        *current = s;
+        *state.library.write().await = library;
     }
-    let library = if s.is_complete() {
-        Some(build_library(&s, &state.catalog_lock).await)
-    } else {
-        None
-    };
-    *current = s;
-    *state.library.write().await = library;
+    // A new Public base URL must reach tracks uploaded before it; also runs on an unchanged
+    // save, so saving again retries a rewrite that failed.
+    let library = state.library.read().await.clone();
+    if let Some(lib) = library {
+        lib.rebase_urls().await.map_err(|e| {
+            format!("Đã lưu cài đặt nhưng chưa ghi lại được URL trong catalog: {e}")
+        })?;
+    }
     Ok(())
 }
 

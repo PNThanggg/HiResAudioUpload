@@ -252,7 +252,26 @@ impl Library {
         format!("{}/{}", self.public_base, key)
     }
 
+    /// Rebuilds a track's public URLs from its object keys with the current base, so a changed
+    /// Public base URL also fixes tracks uploaded before the change. Returns whether they changed.
+    fn rebase(&self, t: &mut TrackSummary) -> bool {
+        let audio = self.url(&t.audio_key);
+        let cover = t.cover_key.as_deref().map(|k| self.url(k));
+        let changed = t.audio_url != audio || t.cover_url != cover;
+        t.audio_url = audio;
+        t.cover_url = cover;
+        changed
+    }
+
     async fn load(&self) -> Result<Catalog> {
+        let mut cat = self.load_stored().await?;
+        for t in &mut cat.tracks {
+            self.rebase(t);
+        }
+        Ok(cat)
+    }
+
+    async fn load_stored(&self) -> Result<Catalog> {
         match self.storage.get(CATALOG_KEY).await? {
             None => Ok(Catalog {
                 version: 1,
@@ -279,6 +298,20 @@ impl Library {
         Ok(())
     }
 
+    /// Writes the catalog back when its stored URLs do not match the current base.
+    pub async fn rebase_urls(&self) -> Result<()> {
+        let _guard = self.lock.lock().await;
+        let mut cat = self.load_stored().await?;
+        let mut changed = false;
+        for t in &mut cat.tracks {
+            changed |= self.rebase(t);
+        }
+        if changed {
+            self.save(cat).await?;
+        }
+        Ok(())
+    }
+
     pub async fn list(&self) -> Result<Vec<TrackSummary>> {
         Ok(self.load().await?.tracks)
     }
@@ -298,8 +331,10 @@ impl Library {
             .get(&meta_key(id))
             .await?
             .ok_or_else(|| LibraryError::NotFound(format!("track {id} not found")))?;
-        serde_json::from_slice(&bytes)
-            .map_err(|e| LibraryError::Storage(format!("meta/{id}.json: {e}")))
+        let mut rec: TrackRecord = serde_json::from_slice(&bytes)
+            .map_err(|e| LibraryError::Storage(format!("meta/{id}.json: {e}")))?;
+        self.rebase(&mut rec.summary);
+        Ok(rec)
     }
 
     pub async fn add(&self, p: ProcessedTrack) -> Result<AddOutcome> {

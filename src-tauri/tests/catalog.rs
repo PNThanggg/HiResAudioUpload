@@ -349,3 +349,94 @@ async fn summary_json_matches_spec_contract() {
         assert!(v[k].is_null(), "{k} should serialize as null, got {}", v[k]);
     }
 }
+
+async fn stored_catalog(st: &MemoryStorage) -> serde_json::Value {
+    serde_json::from_slice(&st.get("catalog.json").await.unwrap().unwrap()).unwrap()
+}
+
+#[tokio::test]
+async fn list_builds_urls_from_keys_with_the_current_base() {
+    let st = Arc::new(MemoryStorage::default());
+    let old = Library::new(st.clone(), "https://old.example.com".to_string());
+    let t = added(old.add(track("cover_small")).await.unwrap());
+    let new = Library::new(st.clone(), "https://pub.example.com".to_string());
+
+    let listed = new.list().await.unwrap();
+    assert_eq!(
+        listed[0].audio_url,
+        format!("https://pub.example.com/{}", t.audio_key)
+    );
+    assert_eq!(
+        listed[0].cover_url,
+        t.cover_key
+            .as_ref()
+            .map(|k| format!("https://pub.example.com/{k}"))
+    );
+}
+
+#[tokio::test]
+async fn rebase_urls_rewrites_the_stored_catalog_once() {
+    let st = Arc::new(MemoryStorage::default());
+    let old = Library::new(st.clone(), "https://old.example.com".to_string());
+    let t = added(old.add(track("cover_small")).await.unwrap());
+    let new = Library::new(st.clone(), "https://pub.example.com".to_string());
+
+    new.rebase_urls().await.unwrap();
+    let cat = stored_catalog(&st).await;
+    assert_eq!(
+        cat["tracks"][0]["audioUrl"],
+        format!("https://pub.example.com/{}", t.audio_key)
+    );
+    assert_eq!(
+        cat["tracks"][0]["coverUrl"],
+        format!("https://pub.example.com/{}", t.cover_key.unwrap())
+    );
+
+    new.rebase_urls().await.unwrap();
+    assert_eq!(
+        stored_catalog(&st).await["updatedAt"],
+        cat["updatedAt"],
+        "nothing to rewrite the second time"
+    );
+}
+
+#[tokio::test]
+async fn a_write_after_a_base_change_fixes_older_entries() {
+    let st = Arc::new(MemoryStorage::default());
+    let old = Library::new(st.clone(), "https://old.example.com".to_string());
+    added(old.add(track("pink_128")).await.unwrap());
+    let new = Library::new(st.clone(), "https://pub.example.com".to_string());
+    added(new.add(track("pink_320")).await.unwrap());
+
+    let cat = stored_catalog(&st).await;
+    for t in cat["tracks"].as_array().unwrap() {
+        assert!(
+            t["audioUrl"]
+                .as_str()
+                .unwrap()
+                .starts_with("https://pub.example.com/audio/"),
+            "{}",
+            t["audioUrl"]
+        );
+    }
+}
+
+#[tokio::test]
+async fn detail_builds_urls_with_the_current_base() {
+    let st = Arc::new(MemoryStorage::default());
+    let old = Library::new(st.clone(), "https://old.example.com".to_string());
+    let t = added(old.add(track("cover_small")).await.unwrap());
+    let new = Library::new(st.clone(), "https://pub.example.com".to_string());
+
+    let rec = new.detail(&t.id).await.unwrap();
+    assert_eq!(
+        rec.summary.audio_url,
+        format!("https://pub.example.com/{}", t.audio_key)
+    );
+    assert_eq!(
+        rec.summary.cover_url,
+        t.cover_key
+            .as_ref()
+            .map(|k| format!("https://pub.example.com/{k}"))
+    );
+}
