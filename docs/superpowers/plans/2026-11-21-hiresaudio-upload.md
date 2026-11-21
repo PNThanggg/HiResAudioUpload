@@ -20,7 +20,7 @@
 - JSON is camelCase. Timestamps are RFC 3339 UTC.
 - Write order: objects first, catalog last. Delete order: catalog first, objects after.
 - R2 secrets never leave the Rust side. Commands return settings with the secret masked.
-- Tauri identifier `audios.hi_res.upload`, product name `HiResAudio Upload`.
+- Tauri identifier `audios.hi-res.upload`, product name `HiResAudio Upload`.
 - Frontend Composables rule from the user's CLAUDE.md does not apply (no Compose here).
 
 ## Review Focus
