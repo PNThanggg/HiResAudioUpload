@@ -25,6 +25,23 @@ pub struct Analysis {
     pub quality_hint: Option<&'static str>,
     pub waveform: Vec<f32>,
     pub pcm_sha256: [u8; 32],
+    /// Packets skipped because symphonia reported a `DecodeError` for them.
+    pub bad_packets: u32,
+}
+
+/// Rejects the decode when nothing decoded or more than 1 % of packets were bad.
+pub fn check_bad_packets(
+    decoded_frames: u64,
+    bad_packets: u32,
+    total_packets: u32,
+) -> Result<(), PipelineError> {
+    if decoded_frames == 0 || u64::from(bad_packets) * 100 > u64::from(total_packets) {
+        return Err(PipelineError::new(
+            ErrorCode::InvalidFormat,
+            format!("decode: {bad_packets} of {total_packets} packets failed to decode"),
+        ));
+    }
+    Ok(())
 }
 
 fn invalid(e: impl std::fmt::Display) -> PipelineError {
@@ -65,6 +82,8 @@ pub fn analyze(bytes: &[u8], cancel: &AtomicBool) -> Result<Analysis, PipelineEr
     let mut le_bytes: Vec<u8> = Vec::new();
     let mut sample_buf: Option<SampleBuffer<f32>> = None;
     let mut decoded_frames: u64 = 0;
+    let mut total_packets: u32 = 0;
+    let mut bad_packets: u32 = 0;
 
     loop {
         if cancel.load(Ordering::Relaxed) {
@@ -78,7 +97,15 @@ pub fn analyze(bytes: &[u8], cancel: &AtomicBool) -> Result<Analysis, PipelineEr
         if packet.track_id() != track_id {
             continue;
         }
-        let decoded = decoder.decode(&packet).map_err(invalid)?;
+        total_packets += 1;
+        let decoded = match decoder.decode(&packet) {
+            Ok(d) => d,
+            Err(SymError::DecodeError(_)) => {
+                bad_packets += 1;
+                continue;
+            }
+            Err(e) => return Err(invalid(e)),
+        };
         if decoded.spec().channels.count() != channels || decoded.spec().rate != sample_rate {
             return Err(invalid("stream format changes mid-file"));
         }
@@ -101,6 +128,7 @@ pub fn analyze(bytes: &[u8], cancel: &AtomicBool) -> Result<Analysis, PipelineEr
         hasher.update(&le_bytes);
     }
 
+    check_bad_packets(decoded_frames, bad_packets, total_packets)?;
     if decoded_frames < u64::from(sample_rate) {
         return Err(PipelineError::new(ErrorCode::TooShort, "decoded audio is shorter than 1 s"));
     }
@@ -124,5 +152,6 @@ pub fn analyze(bytes: &[u8], cancel: &AtomicBool) -> Result<Analysis, PipelineEr
         quality_hint: effective_bandwidth_hz.map(|bw| quality_hint(bw, sample_rate)),
         waveform: waveform.finish(),
         pcm_sha256: hasher.finalize().into(),
+        bad_packets,
     })
 }

@@ -2,7 +2,8 @@ mod common;
 
 use common::{fixture, oracle};
 use hires_upload_lib::error::ErrorCode;
-use hires_upload_lib::pipeline::analyze::analyze;
+use hires_upload_lib::pipeline::analyze::{analyze, check_bad_packets};
+use hires_upload_lib::pipeline::lame::first_frame;
 use hires_upload_lib::pipeline::serve::strip_tags;
 use std::sync::atomic::AtomicBool;
 
@@ -43,4 +44,64 @@ fn pcm_hash_stable_across_strip() {
     let src = fixture("cover_big");
     let c = AtomicBool::new(false);
     assert_eq!(analyze(&src, &c).unwrap().pcm_sha256, analyze(&strip_tags(&src), &c).unwrap().pcm_sha256);
+}
+
+/// Offsets of the MPEG-1 layer III frames of a CBR/VBR file (starting at the Xing frame).
+fn frame_offsets(b: &[u8]) -> Vec<usize> {
+    const BR: [u32; 14] = [32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+    let first = first_frame(b).unwrap();
+    assert!(first.mpeg1 && first.sample_rate == 44_100 && first.channels == 2);
+    let mut out = Vec::new();
+    let mut pos = first.offset;
+    while pos + 4 <= b.len() && b[pos] == 0xFF && b[pos + 1] & 0xE0 == 0xE0 {
+        out.push(pos);
+        let br = BR[(b[pos + 2] >> 4) as usize - 1];
+        let pad = ((b[pos + 2] >> 1) & 1) as u32;
+        pos += (144_000 * br / 44_100 + pad) as usize;
+    }
+    out
+}
+
+/// Sets big_values of granule 0 / channel 0 to 511 (> 288), which symphonia rejects with a
+/// `DecodeError` while the frame header (and so the demuxer) stays intact.
+fn corrupt_side_info(b: &mut [u8], frame: usize) {
+    assert_eq!(b[frame + 1] & 1, 1, "fixture frames carry no CRC");
+    let side = frame + 4;
+    b[side + 4] = 0xFF;
+    b[side + 5] |= 0x80;
+}
+
+#[test]
+fn single_bad_packet_is_skipped() {
+    let mut b = fixture("pink_128");
+    let frames = frame_offsets(&b);
+    let clean = analyze(&b, &AtomicBool::new(false)).unwrap();
+    assert_eq!(clean.bad_packets, 0);
+    corrupt_side_info(&mut b, frames[frames.len() / 2]);
+    let a = analyze(&b, &AtomicBool::new(false)).unwrap();
+    assert_eq!(a.bad_packets, 1);
+    assert!(a.decoded_frames < clean.decoded_frames);
+}
+
+#[test]
+fn many_bad_packets_are_invalid_format() {
+    let mut b = fixture("pink_128");
+    let frames = frame_offsets(&b);
+    // Every 50th frame: ~2 % of the packets.
+    for &f in frames.iter().skip(10).step_by(50) {
+        corrupt_side_info(&mut b, f);
+    }
+    let e = analyze(&b, &AtomicBool::new(false)).unwrap_err();
+    assert_eq!(e.code, ErrorCode::InvalidFormat);
+    assert!(e.message.contains("packets failed to decode"), "{}", e.message);
+}
+
+#[test]
+fn bad_packet_threshold() {
+    assert!(check_bad_packets(1000, 0, 1000).is_ok());
+    assert!(check_bad_packets(1000, 10, 1000).is_ok());
+    let e = check_bad_packets(1000, 11, 1000).unwrap_err();
+    assert_eq!(e.code, ErrorCode::InvalidFormat);
+    assert!(e.message.contains("11 of 1000"), "{}", e.message);
+    assert_eq!(check_bad_packets(0, 0, 0).unwrap_err().code, ErrorCode::InvalidFormat);
 }
