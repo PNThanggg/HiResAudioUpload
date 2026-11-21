@@ -1,4 +1,6 @@
-use hires_upload_lib::catalog::{Library, MemoryStorage};
+use hires_upload_lib::catalog::{Library, MemoryStorage, Storage};
+use hires_upload_lib::pipeline::process;
+use std::sync::atomic::AtomicBool;
 use hires_upload_lib::commands::{run_batch, UploadProgress, UploadStage};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -81,4 +83,57 @@ async fn oversized_file_is_rejected_before_reading() {
     let last = ev.last().unwrap();
     assert_eq!(last.stage, UploadStage::Error);
     assert_eq!(last.error_code.as_deref(), Some("TOO_LARGE"));
+}
+
+/// Panics on the put of one key; everything else goes to the wrapped store.
+struct PanicOnPut {
+    inner: MemoryStorage,
+    key: String,
+}
+
+#[async_trait::async_trait]
+impl Storage for PanicOnPut {
+    async fn put(&self, key: &str, body: Vec<u8>, ct: &str, cc: &str) -> anyhow::Result<()> {
+        assert_ne!(key, self.key, "injected panic");
+        self.inner.put(key, body, ct, cc).await
+    }
+    async fn get(&self, key: &str) -> anyhow::Result<Option<Vec<u8>>> {
+        self.inner.get(key).await
+    }
+    async fn delete(&self, key: &str) -> anyhow::Result<()> {
+        self.inner.delete(key).await
+    }
+}
+
+#[tokio::test]
+async fn panicking_file_is_internal_and_batch_continues() {
+    let doomed = process(
+        std::fs::read(fx("pink_320")).unwrap(),
+        "pink_320",
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let storage = Arc::new(PanicOnPut {
+        inner: MemoryStorage::default(),
+        key: format!("audio/{}.mp3", doomed.id),
+    });
+    let lib = Arc::new(Library::new(storage, "https://cdn.example.com".to_string()));
+    let events: Arc<Mutex<Vec<UploadProgress>>> = Arc::default();
+    let sink = events.clone();
+    run_batch(vec![fx("pink_320"), fx("pink_128")], lib.clone(), move |e| {
+        sink.lock().unwrap().push(e)
+    })
+    .await;
+
+    let ev = events.lock().unwrap().clone();
+    let last = |name: &str| {
+        let p = fx(name).to_string_lossy().to_string();
+        ev.iter().rev().find(|e| e.path == p).unwrap().clone()
+    };
+    let bad = last("pink_320");
+    assert_eq!(bad.stage, UploadStage::Error);
+    assert_eq!(bad.error_code.as_deref(), Some("INTERNAL"));
+    assert_eq!(last("pink_128").stage, UploadStage::Done);
+    // The panic unwound through the catalog lock; the library still works.
+    assert_eq!(lib.list().await.unwrap().len(), 1);
 }
