@@ -50,3 +50,43 @@ export function toast(kind: ToastKind, title: string, message = ""): void {
   });
   qs<HTMLButtonElement>(el, "button").addEventListener("click", remove);
 }
+
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Traps Tab inside `container` and calls `onEscape` on Esc. Returns a function
+ * that removes the trap and gives focus back to `returnTo`.
+ */
+export function trapFocus(
+  container: HTMLElement,
+  onEscape: () => void,
+  returnTo: HTMLElement | null = document.activeElement as HTMLElement | null,
+): () => void {
+  const onKey = (ev: KeyboardEvent) => {
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      ev.stopPropagation();
+      onEscape();
+      return;
+    }
+    if (ev.key !== "Tab") return;
+    const items = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (ev.shiftKey && (active === first || !container.contains(active))) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && (active === last || !container.contains(active))) {
+      ev.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener("keydown", onKey, true);
+  return () => {
+    document.removeEventListener("keydown", onKey, true);
+    returnTo?.focus?.();
+  };
+}

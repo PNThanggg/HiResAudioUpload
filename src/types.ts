@@ -76,7 +76,10 @@ export interface UploadProgress {
   track: TrackSummary | null;
 }
 
-export type AddOutcome = { added: TrackSummary } | { duplicate: TrackSummary };
+export interface AddOutcome {
+  kind: "added" | "duplicate";
+  track: TrackSummary;
+}
 
 export interface LibraryError {
   code: "CATALOG_CORRUPT" | "NOT_FOUND" | "VALIDATION" | "STORAGE";

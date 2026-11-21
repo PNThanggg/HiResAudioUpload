@@ -176,12 +176,24 @@ export const mockApi = {
       throw "Thiếu thông tin: điền đủ các trường trước khi kiểm tra.";
   },
   async uploadFiles(paths: string[]): Promise<void> {
-    for (const path of paths) {
+    // Demo script: 2nd file of a batch is a duplicate of an existing track, 3rd fails to parse.
+    for (const [index, path] of paths.entries()) {
       const fileName = path.split(/[\\/]/).pop() ?? path;
       const base = { path, fileName, errorCode: null, message: null, track: null };
       emit({ ...base, stage: "queued" });
       setTimeout(() => emit({ ...base, stage: "analysing" }), 300);
       setTimeout(() => emit({ ...base, stage: "uploading" }), 900);
+      if (index % 5 === 1 && tracks.length > 0) {
+        setTimeout(() => emit({ ...base, stage: "duplicate", track: summary(tracks[0]) }), 1100);
+        continue;
+      }
+      if (index % 5 === 2) {
+        setTimeout(
+          () => emit({ ...base, stage: "error", errorCode: "INVALID_FORMAT", message: "not an mp3" }),
+          1200,
+        );
+        continue;
+      }
       setTimeout(() => {
         const t = makeRecord(seeds[tracks.length % seeds.length], tracks.length + 20);
         t.title = fileName.replace(/\.mp3$/i, "");
@@ -211,7 +223,11 @@ export const mockApi = {
     return () => listeners.delete(cb);
   },
   async pickFiles(): Promise<string[]> {
-    return [];
+    return [
+      "C:/Music/em-oi-ha-noi-pho.mp3",
+      "C:/Music/Dem Sai Gon (master).mp3",
+      "C:/Music/intro-loop.mp3",
+    ];
   },
   async pickImage(): Promise<string | null> {
     return null;
