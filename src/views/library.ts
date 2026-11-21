@@ -53,9 +53,10 @@ export function qualityBadge(
   )}</span>`;
 }
 
-export function coverCell(t: TrackSummary, cls = "cover"): string {
+/** Cover image markup; `alt` is plain text (escaped here), empty for decorative covers. */
+export function coverCell(t: TrackSummary, cls = "cover", alt = ""): string {
   if (t.coverUrl) {
-    return `<img class="${cls}" src="${esc(t.coverUrl)}" alt="" loading="lazy">`;
+    return `<img class="${cls}" src="${esc(t.coverUrl)}" alt="${esc(alt)}" loading="lazy">`;
   }
   return `<span class="${cls} cover--empty" role="img" aria-label="Không có ảnh bìa">${icon("music")}</span>`;
 }

@@ -107,7 +107,7 @@ function render(t: TrackRecord): string {
   </div>
   <div class="inspector-body">
     <div class="detail-hero">
-      ${coverCell(t, "cover cover--detail").replace('alt=""', `alt="${esc(t.album ? `Ảnh bìa ${t.album}` : "Ảnh bìa")}"`)}
+      ${coverCell(t, "cover cover--detail", t.album ? `Ảnh bìa ${t.album}` : "Ảnh bìa")}
       <div class="detail-id">
         <h3 class="detail-title">${esc(t.title)}</h3>
         <p class="detail-sub">${esc(t.artist ?? "Không rõ nghệ sĩ")}</p>
