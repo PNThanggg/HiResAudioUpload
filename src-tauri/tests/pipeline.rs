@@ -2,7 +2,7 @@ mod common;
 
 use common::fixture;
 use hires_upload_lib::error::ErrorCode;
-use hires_upload_lib::pipeline::lame::read_gapless;
+use hires_upload_lib::pipeline::lame::{first_frame, read_gapless};
 use hires_upload_lib::pipeline::{process, process_with_timeout, sha256_hex};
 use std::sync::atomic::AtomicBool;
 
@@ -39,6 +39,27 @@ fn cbr_and_vbr_bitrate() {
     let (_, vbr) = run("pink_v2");
     assert!(vbr.vbr);
     assert!((90..=130).contains(&vbr.bitrate_kbps), "{}", vbr.bitrate_kbps);
+}
+
+#[test]
+fn vbr_without_lame_id_keeps_vbr() {
+    let mut src = fixture("pink_v2");
+    let f = first_frame(&src).unwrap();
+    let tag = f.offset + 4 + f.side_info_len;
+    assert_eq!(&src[tag..tag + 4], b"Xing");
+    let flags = u32::from_be_bytes(src[tag + 4..tag + 8].try_into().unwrap());
+    let mut lame = tag + 8;
+    for (bit, len) in [(1, 4), (2, 4), (4, 100), (8, 4)] {
+        if flags & bit != 0 {
+            lame += len;
+        }
+    }
+    src[lame..lame + 9].fill(0); // encoder id no longer plausible
+    assert!(read_gapless(&src).is_none());
+    let t = process(src, "pink_v2_nolame", &AtomicBool::new(false)).unwrap();
+    assert!(t.vbr);
+    assert!(t.gapless.is_none());
+    assert!((90..=130).contains(&t.bitrate_kbps), "{}", t.bitrate_kbps);
 }
 
 #[test]

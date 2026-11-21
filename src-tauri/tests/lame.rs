@@ -1,7 +1,7 @@
 mod common;
 
 use common::fixture;
-use hires_upload_lib::pipeline::lame::{first_frame, id3v2_len, read_gapless};
+use hires_upload_lib::pipeline::lame::{first_frame, id3v2_len, read_gapless, read_xing};
 
 #[test]
 fn syncsafe_and_footer() {
@@ -67,4 +67,16 @@ fn xing_without_lame_id_is_none() {
     let g = read_gapless(&xing_frame(b"LAME3.100")).unwrap();
     assert_eq!(g.encoder, "LAME3.100");
     assert_eq!(read_gapless(&xing_frame(b"L3.99r\0\0\0")).unwrap().encoder, "L3.99r");
+}
+
+#[test]
+fn xing_survives_missing_lame_id() {
+    let x = read_xing(&xing_frame(&[0; 9])).unwrap();
+    assert!(x.vbr);
+    assert_eq!(x.frames, Some(100));
+    let mut info = xing_frame(&[0; 9]);
+    info[36..40].copy_from_slice(b"Info");
+    assert!(!read_xing(&info).unwrap().vbr);
+    assert!(read_xing(&fixture("noxing_notag")).is_none());
+    assert!(read_xing(&fixture("pink_v2")).unwrap().vbr);
 }

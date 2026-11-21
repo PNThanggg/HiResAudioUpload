@@ -105,8 +105,18 @@ fn be32(b: &[u8], pos: usize) -> Option<u32> {
     Some(u32::from_be_bytes(b.get(pos..pos + 4)?.try_into().ok()?))
 }
 
-/// Reads delay/padding from the Xing/Info + LAME tag of the first frame.
-pub fn read_gapless(b: &[u8]) -> Option<Gapless> {
+/// Xing/Info header of the first frame, independent of any LAME extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Xing {
+    /// `true` for a "Xing" tag (VBR), `false` for "Info" (CBR).
+    pub vbr: bool,
+    /// Frame count, when the frames flag is set.
+    pub frames: Option<u32>,
+}
+
+/// Parses the Xing/Info header; also returns the first frame and the offset just past
+/// the optional Xing fields, where a LAME extension would start.
+fn xing_at(b: &[u8]) -> Option<(FrameHeader, Xing, usize)> {
     let f = first_frame(b)?;
     let tag = f.offset + 4 + f.side_info_len;
     let vbr = match b.get(tag..tag + 4)? {
@@ -115,11 +125,12 @@ pub fn read_gapless(b: &[u8]) -> Option<Gapless> {
         _ => return None,
     };
     let flags = be32(b, tag + 4)?;
-    if flags & 1 == 0 {
-        return None;
+    let mut pos = tag + 8;
+    let mut frames = None;
+    if flags & 1 != 0 {
+        frames = Some(be32(b, pos)?);
+        pos += 4;
     }
-    let frames = be32(b, tag + 8)?;
-    let mut pos = tag + 12;
     if flags & 2 != 0 {
         pos += 4;
     }
@@ -129,6 +140,18 @@ pub fn read_gapless(b: &[u8]) -> Option<Gapless> {
     if flags & 8 != 0 {
         pos += 4;
     }
+    Some((f, Xing { vbr, frames }, pos))
+}
+
+/// Reads the Xing/Info header of the first frame (VBR flag + frame count).
+pub fn read_xing(b: &[u8]) -> Option<Xing> {
+    xing_at(b).map(|(_, x, _)| x)
+}
+
+/// Reads delay/padding from the Xing/Info + LAME tag of the first frame.
+pub fn read_gapless(b: &[u8]) -> Option<Gapless> {
+    let (f, Xing { vbr, frames }, pos) = xing_at(b)?;
+    let frames = frames?;
     let lame = b.get(pos..pos + 24)?;
     // Only trust delay/padding behind a plausible encoder id ("LAME3.100", "Lavc58.13", "L3.99r").
     let id = &lame[..9];

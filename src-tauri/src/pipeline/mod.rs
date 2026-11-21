@@ -62,16 +62,19 @@ pub fn process(
     let id = sha256_hex(&served);
 
     let sr = probed.header.sample_rate as u64;
+    // Without gapless data, count each skipped (undecodable) packet as one full frame.
+    let skipped = u64::from(analysis.bad_packets) * u64::from(probed.header.samples_per_frame);
     let frames = probed
         .gapless
         .as_ref()
-        .map_or(analysis.decoded_frames, |g| g.total_samples);
+        .map_or(analysis.decoded_frames + skipped, |g| g.total_samples);
     let duration_ms = frames * 1000 / sr;
     if duration_ms > MAX_DURATION_MS {
         return Err(PipelineError::new(ErrorCode::TooLarge, "duration exceeds 2 hours"));
     }
 
-    let vbr = probed.gapless.as_ref().is_some_and(|g| g.vbr);
+    // A Xing header marks VBR even when no trustworthy LAME tag follows it.
+    let vbr = lame::read_xing(&source).is_some_and(|x| x.vbr);
     let bitrate_kbps = if vbr && duration_ms > 0 {
         (serve::audio_payload_len(&source) as f64 * 8.0 / (duration_ms as f64 / 1000.0) / 1000.0)
             .round() as u32
