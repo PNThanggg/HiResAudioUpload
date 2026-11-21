@@ -104,5 +104,6 @@ fn bad_packet_threshold() {
     assert_eq!(e.code, ErrorCode::InvalidFormat);
     assert!(e.message.contains("11 of 1000"), "{}", e.message);
     assert_eq!(check_bad_packets(0, 0, 0).unwrap_err().code, ErrorCode::TooShort);
+    assert_eq!(check_bad_packets(0, 0, 3).unwrap_err().code, ErrorCode::TooShort);
     assert_eq!(check_bad_packets(0, 5, 5).unwrap_err().code, ErrorCode::InvalidFormat);
 }

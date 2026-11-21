@@ -88,7 +88,7 @@ fn validate_requires_http_public_base_url() {
 async fn init_state_ignores_invalid_saved_settings() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("settings.json");
-    let bad = Settings { public_base_url: "https://".into(), ..sample() };
+    let bad = Settings { public_base_url: "https://?q".into(), ..sample() };
     save(&path, &bad).unwrap();
     let state = hires_upload_lib::commands::init_state(path).await;
     assert!(state.library.read().await.is_none());

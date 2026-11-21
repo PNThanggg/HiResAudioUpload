@@ -29,14 +29,14 @@ pub struct Analysis {
     pub bad_packets: u32,
 }
 
-/// Rejects the decode when there were no packets (`TOO_SHORT`), or when nothing decoded or
-/// more than 1 % of packets were bad (`INVALID_FORMAT`).
+/// Rejects the decode when no audio came out without any bad packet (`TOO_SHORT`), or when
+/// nothing decoded or more than 1 % of packets were bad (`INVALID_FORMAT`).
 pub fn check_bad_packets(
     decoded_frames: u64,
     bad_packets: u32,
     total_packets: u32,
 ) -> Result<(), PipelineError> {
-    if total_packets == 0 {
+    if total_packets == 0 || (decoded_frames == 0 && bad_packets == 0) {
         return Err(PipelineError::new(ErrorCode::TooShort, "no audio frames"));
     }
     if decoded_frames == 0 || u64::from(bad_packets) * 100 > u64::from(total_packets) {

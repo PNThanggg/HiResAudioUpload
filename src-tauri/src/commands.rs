@@ -217,12 +217,16 @@ pub async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String
 }
 
 #[tauri::command]
-pub async fn save_settings(state: State<'_, AppState>, s: Settings) -> Result<(), String> {
-    let s = resolve_incoming(&state, s).await;
-    s.validate()?;
-    // Hold the write lock across the file write so concurrent saves cannot leave the file
-    // and the live settings pointing at different buckets.
+pub async fn save_settings(state: State<'_, AppState>, mut s: Settings) -> Result<(), String> {
+    // Hold the write lock from resolving the masked secret through the file write, so
+    // concurrent saves can neither lose a new secret nor leave the file and the live
+    // settings pointing at different buckets.
     let mut current = state.settings.write().await;
+    if s.secret_access_key.starts_with(MASK_PREFIX) {
+        s.secret_access_key = current.secret_access_key.clone();
+    }
+    let s = s.normalize();
+    s.validate()?;
     settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
     if *current == s {
         return Ok(());

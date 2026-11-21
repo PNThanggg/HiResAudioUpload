@@ -463,11 +463,12 @@ impl Library {
         .await?;
         cat.tracks[idx] = t.clone();
         if let Err(e) = self.save(cat.clone()).await {
-            // Unless the catalog did take the edit, put the old meta back so the detail view
-            // matches the catalog. A new cover object is kept: an orphan is harmless.
+            // Put the old meta back only when the re-read shows the catalog lacks the edit, so
+            // the detail view matches the catalog; if the re-read fails too, leave the new meta
+            // (the PUT may have committed). A new cover object is kept: an orphan is harmless.
             match self.load().await {
                 Ok(now) if now.tracks.contains(&t) => {}
-                _ => {
+                Ok(_) => {
                     let _ = self
                         .put_meta(&TrackRecord {
                             summary: old,
@@ -476,6 +477,7 @@ impl Library {
                         .await;
                     return Err(e);
                 }
+                Err(_) => return Err(e),
             }
         }
 
