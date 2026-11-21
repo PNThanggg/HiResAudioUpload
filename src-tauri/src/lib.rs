@@ -9,6 +9,15 @@ pub mod settings;
 pub fn run() {
     use tauri::Manager;
     tauri::Builder::default()
+        // Must be registered first: a second launch only focuses the running window, so two
+        // instances never race on the same bucket.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.unminimize();
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");

@@ -7,7 +7,9 @@ use tauri::{AppHandle, Emitter, State};
 use tokio::sync::{RwLock, Semaphore};
 use tokio::task::JoinSet;
 
-use crate::catalog::{AddOutcome, Library, LibraryError, TagEdit, TrackRecord, TrackSummary};
+use crate::catalog::{
+    AddOutcome, CatalogLock, Library, LibraryError, TagEdit, TrackRecord, TrackSummary,
+};
 use crate::error::{ErrorCode, PipelineError};
 use crate::pipeline::probe::check_size;
 use crate::pipeline::{process_bytes_with_timeout, sha256_hex};
@@ -20,6 +22,9 @@ pub struct AppState {
     pub settings_path: PathBuf,
     pub settings: RwLock<Settings>,
     pub library: RwLock<Option<Arc<Library>>>,
+    /// Shared by every Library built during the app's life, so a batch still running on a
+    /// replaced Library cannot interleave catalog writes with the new one.
+    pub catalog_lock: CatalogLock,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -171,16 +176,21 @@ async fn library_of(state: &AppState) -> Result<Arc<Library>, LibraryError> {
     state.library.read().await.clone().ok_or_else(not_configured)
 }
 
-async fn build_library(s: &Settings) -> Arc<Library> {
+async fn build_library(s: &Settings, lock: &CatalogLock) -> Arc<Library> {
     let storage = R2Storage::new(s).await;
-    Arc::new(Library::new(Arc::new(storage), s.public_base_url.clone()))
+    Arc::new(Library::with_lock(
+        Arc::new(storage),
+        s.public_base_url.clone(),
+        lock.clone(),
+    ))
 }
 
 /// Builds the app state at startup from the settings file.
 pub async fn init_state(settings_path: PathBuf) -> AppState {
     let s = settings::load(&settings_path).normalize();
+    let catalog_lock = CatalogLock::default();
     let library = if s.is_complete() {
-        Some(build_library(&s).await)
+        Some(build_library(&s, &catalog_lock).await)
     } else {
         None
     };
@@ -188,6 +198,7 @@ pub async fn init_state(settings_path: PathBuf) -> AppState {
         settings_path,
         settings: RwLock::new(s),
         library: RwLock::new(library),
+        catalog_lock,
     }
 }
 
@@ -208,12 +219,16 @@ pub async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String
 pub async fn save_settings(state: State<'_, AppState>, s: Settings) -> Result<(), String> {
     let s = resolve_incoming(&state, s).await;
     settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
+    let mut current = state.settings.write().await;
+    if *current == s {
+        return Ok(());
+    }
     let library = if s.is_complete() {
-        Some(build_library(&s).await)
+        Some(build_library(&s, &state.catalog_lock).await)
     } else {
         None
     };
-    *state.settings.write().await = s;
+    *current = s;
     *state.library.write().await = library;
     Ok(())
 }

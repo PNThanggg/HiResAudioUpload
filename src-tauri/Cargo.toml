@@ -50,3 +50,6 @@ strip = true
 # Decoding/FFT/loudness deps are very slow unoptimised; keep debug tests fast.
 [profile.dev.package."*"]
 opt-level = 3
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2"
