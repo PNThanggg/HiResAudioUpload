@@ -45,3 +45,26 @@ fn garbage_is_none() {
     assert!(first_frame(&[0xFF; 64]).is_none());
     assert!(read_gapless(b"hello").is_none());
 }
+
+/// One MPEG-1 layer III 128 kbps / 44.1 kHz stereo frame (417 bytes) carrying a Xing tag
+/// (frames field only) followed by `lame_id` as the 9-byte encoder id.
+fn xing_frame(lame_id: &[u8; 9]) -> Vec<u8> {
+    let mut b = vec![0u8; 417];
+    b[..4].copy_from_slice(&[0xFF, 0xFB, 0x90, 0x00]);
+    let tag = 4 + 32;
+    b[tag..tag + 4].copy_from_slice(b"Xing");
+    b[tag + 4..tag + 8].copy_from_slice(&1u32.to_be_bytes());
+    b[tag + 8..tag + 12].copy_from_slice(&100u32.to_be_bytes());
+    b[tag + 12..tag + 21].copy_from_slice(lame_id);
+    b
+}
+
+#[test]
+fn xing_without_lame_id_is_none() {
+    assert!(read_gapless(&xing_frame(&[0; 9])).is_none());
+    assert!(read_gapless(&xing_frame(b"\x01AME3.100")).is_none());
+    assert!(read_gapless(&xing_frame(b"3.100LAME")).is_none());
+    let g = read_gapless(&xing_frame(b"LAME3.100")).unwrap();
+    assert_eq!(g.encoder, "LAME3.100");
+    assert_eq!(read_gapless(&xing_frame(b"L3.99r\0\0\0")).unwrap().encoder, "L3.99r");
+}

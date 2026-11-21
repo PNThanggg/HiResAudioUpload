@@ -130,10 +130,15 @@ pub fn read_gapless(b: &[u8]) -> Option<Gapless> {
         pos += 4;
     }
     let lame = b.get(pos..pos + 24)?;
-    let encoder = String::from_utf8_lossy(&lame[..9])
-        .trim_end_matches('\0')
-        .trim()
-        .to_string();
+    // Only trust delay/padding behind a plausible encoder id ("LAME3.100", "Lavc58.13", "L3.99r").
+    let id = &lame[..9];
+    let id = &id[..id.iter().rposition(|&c| c != 0).map_or(0, |i| i + 1)];
+    if !id.first().is_some_and(u8::is_ascii_alphabetic)
+        || !id.iter().all(|&c| (0x20..=0x7E).contains(&c))
+    {
+        return None;
+    }
+    let encoder = String::from_utf8_lossy(id).trim().to_string();
     let delay = ((lame[21] as u32) << 4) | (lame[22] >> 4) as u32;
     let padding = (((lame[22] & 0x0F) as u32) << 8) | lame[23] as u32;
     let total = frames as u64 * f.samples_per_frame as u64;
