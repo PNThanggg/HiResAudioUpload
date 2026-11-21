@@ -1,0 +1,350 @@
+/*
+ * HiResAudio Upload — design tokens ("Mastering Console").
+ * See docs/design/README.md for the rationale and component specs.
+ *
+ * Layers: primitives (--p-*) → semantic (--color-*, --space-*, --radius-*, --font-*, …).
+ * Components use semantic tokens only, never --p-* or raw hex.
+ *
+ * Theme: follows prefers-color-scheme; <html data-theme="light|dark"> forces one.
+ */
+
+:root {
+  /* ---------- Primitives: neutrals (cool graphite) ---------- */
+  --p-gray-0: #ffffff;
+  --p-gray-25: #fafafb;
+  --p-gray-50: #f4f5f7;
+  --p-gray-75: #eef0f3;
+  --p-gray-100: #e6e9ed;
+  --p-gray-200: #d3d7de;
+  --p-gray-300: #b6bcc7;
+  --p-gray-400: #8f96a3;
+  --p-gray-450: #878e9b;
+  --p-gray-500: #6a717e;
+  --p-gray-600: #535a66;
+  --p-gray-650: #646b77;
+  --p-gray-700: #3c414b;
+  --p-gray-750: #31353e;
+  --p-gray-800: #272a31;
+  --p-gray-850: #1d2026;
+  --p-gray-900: #16181d;
+  --p-gray-925: #121418;
+  --p-gray-950: #0d0f12;
+
+  /* ---------- Primitives: signal violet (brand accent) ---------- */
+  --p-violet-50: #f1eefe;
+  --p-violet-100: #e4defd;
+  --p-violet-300: #a99cff;
+  --p-violet-400: #9183ff;
+  --p-violet-500: #7461f6;
+  --p-violet-550: #6650ee;
+  --p-violet-600: #5b43e6;
+  --p-violet-700: #4a32cc;
+  --p-violet-900: #231d45;
+  --p-violet-950: #1b1733;
+
+  /* ---------- Primitives: meter colors (quality ladder + status) ---------- */
+  --p-green-50: #e5f6ec;
+  --p-green-200: #b3e2c5;
+  --p-green-400: #4fd88a;
+  --p-green-700: #11743f;
+  --p-green-950: #0f2619;
+
+  --p-cyan-50: #e2f3f8;
+  --p-cyan-200: #ace0ee;
+  --p-cyan-400: #5ccbe6;
+  --p-cyan-700: #0b6683;
+  --p-cyan-950: #0c232c;
+
+  --p-amber-50: #fcf1dd;
+  --p-amber-200: #f2d39a;
+  --p-amber-400: #f2b54a;
+  --p-amber-700: #8a5100;
+  --p-amber-950: #2b200e;
+
+  --p-red-50: #fde8e8;
+  --p-red-200: #f5bcbc;
+  --p-red-400: #fb7b7b;
+  --p-red-600: #c42b2b;
+  --p-red-700: #b01f1f;
+  --p-red-950: #311416;
+
+  /* ---------- Typography (system fonts: the app runs offline) ---------- */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans", Roboto, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Noto Sans", sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --font-size-xs: 12px;   /* captions, axis ticks, column headers */
+  --font-size-sm: 13px;   /* table cells, field helpers */
+  --font-size-md: 14px;   /* body, inputs, buttons */
+  --font-size-lg: 16px;   /* panel titles */
+  --font-size-xl: 18px;   /* detail track title */
+  --font-size-2xl: 22px;  /* page title */
+  --font-size-3xl: 26px;  /* metric numbers */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-line-tight: 1.2;
+  --font-line-base: 1.45;
+  --font-tracking-caps: 0.06em;
+
+  /* ---------- Spacing (4px grid, dense) ---------- */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---------- Radius ---------- */
+  --radius-xs: 3px;    /* meter segments, checkbox */
+  --radius-sm: 4px;    /* badges, chips, covers in rows */
+  --radius-md: 6px;    /* buttons, inputs */
+  --radius-lg: 10px;   /* panels, cards, dialogs */
+  --radius-full: 999px;
+
+  /* ---------- Sizes (desktop, pointer) ---------- */
+  --size-topbar: 52px;
+  --size-toolbar: 48px;
+  --size-row: 48px;            /* two-line track row */
+  --size-row-compact: 36px;    /* queue rows, definition lists */
+  --size-control: 32px;        /* buttons, inputs */
+  --size-control-sm: 26px;
+  --size-icon: 16px;
+  --size-icon-lg: 20px;
+  --size-cover-row: 32px;
+  --size-cover-detail: 88px;
+  --size-inspector: 384px;
+  --size-dialog: 560px;
+  --size-focus-ring: 2px;
+
+  /* ---------- Motion ---------- */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-linear: linear;
+
+  /* ---------- Layers ---------- */
+  --z-sticky: 10;
+  --z-panel: 20;
+  --z-overlay: 40;
+  --z-dialog: 50;
+  --z-toast: 60;
+
+  /* ---------- Semantic colors: LIGHT (default) ---------- */
+  color-scheme: light;
+
+  --color-bg: var(--p-gray-50);
+  --color-surface: var(--p-gray-0);
+  --color-surface-sunken: var(--p-gray-50);
+  --color-surface-raised: var(--p-gray-0);
+  --color-hover: var(--p-gray-75);
+  --color-pressed: var(--p-gray-100);
+  --color-border: var(--p-gray-100);
+  --color-border-strong: var(--p-gray-200);
+  --color-border-input: var(--p-gray-450);    /* >= 3:1 vs surface (WCAG 1.4.11) */
+
+  --color-text: var(--p-gray-900);
+  --color-text-muted: var(--p-gray-600);
+  --color-text-subtle: var(--p-gray-500);
+  --color-text-disabled: var(--p-gray-400);
+  --color-text-inverse: var(--p-gray-0);
+
+  --color-accent: var(--p-violet-600);          /* solid fills: primary button, checkbox */
+  --color-accent-hover: var(--p-violet-700);
+  --color-accent-fg: var(--p-gray-0);           /* text on --color-accent */
+  --color-accent-text: var(--p-violet-600);     /* links / accent text on surface */
+  --color-accent-soft: var(--p-violet-50);      /* selected row, drag-over */
+  --color-accent-border: var(--p-violet-300);
+  --color-focus: var(--p-violet-600);
+
+  --color-row-hover: var(--p-gray-25);
+  --color-row-selected: var(--p-violet-50);
+  --color-row-active: var(--p-gray-75);
+
+  --color-success: var(--p-green-700);
+  --color-success-soft: var(--p-green-50);
+  --color-success-border: var(--p-green-200);
+  --color-info: var(--p-cyan-700);
+  --color-info-soft: var(--p-cyan-50);
+  --color-info-border: var(--p-cyan-200);
+  --color-warning: var(--p-amber-700);
+  --color-warning-soft: var(--p-amber-50);
+  --color-warning-border: var(--p-amber-200);
+  --color-danger: var(--p-red-700);
+  --color-danger-soft: var(--p-red-50);
+  --color-danger-border: var(--p-red-200);
+  --color-danger-solid: var(--p-red-600);       /* destructive button fill */
+  --color-danger-solid-hover: var(--p-red-700);
+  --color-danger-fg: var(--p-gray-0);
+
+  /* Quality ladder (badge text/meter, badge fill, badge border) */
+  --color-quality-full: var(--color-success);
+  --color-quality-full-soft: var(--color-success-soft);
+  --color-quality-full-border: var(--color-success-border);
+  --color-quality-high: var(--color-info);
+  --color-quality-high-soft: var(--color-info-soft);
+  --color-quality-high-border: var(--color-info-border);
+  --color-quality-medium: var(--color-warning);
+  --color-quality-medium-soft: var(--color-warning-soft);
+  --color-quality-medium-border: var(--color-warning-border);
+  --color-quality-low: var(--color-danger);
+  --color-quality-low-soft: var(--color-danger-soft);
+  --color-quality-low-border: var(--color-danger-border);
+  --color-quality-none: var(--color-text-muted);
+  --color-quality-none-soft: var(--color-surface-sunken);
+  --color-quality-none-border: var(--color-border-strong);
+
+  --color-waveform: var(--p-violet-600);
+  --color-waveform-baseline: var(--p-gray-200);
+  --color-cover-placeholder: var(--p-gray-75);
+  --color-cover-placeholder-icon: var(--p-gray-400);
+  --color-skeleton: var(--p-gray-100);
+  --color-scrim: rgb(13 15 18 / 0.45);
+
+  --shadow-sm: 0 1px 2px rgb(16 20 28 / 0.06);
+  --shadow-md: 0 4px 14px rgb(16 20 28 / 0.08), 0 1px 3px rgb(16 20 28 / 0.06);
+  --shadow-lg: 0 18px 48px rgb(16 20 28 / 0.18), 0 2px 6px rgb(16 20 28 / 0.08);
+}
+
+/* ---------- Semantic colors: DARK (system preference) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg: var(--p-gray-950);
+    --color-surface: var(--p-gray-900);
+    --color-surface-sunken: var(--p-gray-925);
+    --color-surface-raised: var(--p-gray-850);
+    --color-hover: var(--p-gray-850);
+    --color-pressed: var(--p-gray-800);
+    --color-border: var(--p-gray-800);
+    --color-border-strong: var(--p-gray-750);
+    --color-border-input: var(--p-gray-650);
+
+    --color-text: #e9ebef;
+    --color-text-muted: #a9afba;
+    --color-text-subtle: #8c93a0;
+    --color-text-disabled: var(--p-gray-600);
+    --color-text-inverse: var(--p-gray-950);
+
+    --color-accent: var(--p-violet-550);
+    --color-accent-hover: var(--p-violet-600);
+    --color-accent-fg: var(--p-gray-0);
+    --color-accent-text: var(--p-violet-300);
+    --color-accent-soft: var(--p-violet-950);
+    --color-accent-border: var(--p-violet-700);
+    --color-focus: var(--p-violet-300);
+
+    --color-row-hover: #1a1c22;
+    --color-row-selected: var(--p-violet-950);
+    --color-row-active: var(--p-gray-850);
+
+    --color-success: var(--p-green-400);
+    --color-success-soft: var(--p-green-950);
+    --color-success-border: #1d4a30;
+    --color-info: var(--p-cyan-400);
+    --color-info-soft: var(--p-cyan-950);
+    --color-info-border: #164555;
+    --color-warning: var(--p-amber-400);
+    --color-warning-soft: var(--p-amber-950);
+    --color-warning-border: #53401c;
+    --color-danger: var(--p-red-400);
+    --color-danger-soft: var(--p-red-950);
+    --color-danger-border: #5c2427;
+    --color-danger-solid: var(--p-red-600);
+    --color-danger-solid-hover: #d63a3a;
+    --color-danger-fg: var(--p-gray-0);
+
+    --color-waveform: var(--p-violet-400);
+    --color-waveform-baseline: var(--p-gray-800);
+    --color-cover-placeholder: var(--p-gray-800);
+    --color-cover-placeholder-icon: var(--p-gray-500);
+    --color-skeleton: var(--p-gray-850);
+    --color-scrim: rgb(0 0 0 / 0.6);
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 20px 56px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.04);
+  }
+}
+
+/* ---------- Semantic colors: DARK (forced via data-theme) ---------- */
+/* Keep identical to the media-query block above. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: var(--p-gray-950);
+  --color-surface: var(--p-gray-900);
+  --color-surface-sunken: var(--p-gray-925);
+  --color-surface-raised: var(--p-gray-850);
+  --color-hover: var(--p-gray-850);
+  --color-pressed: var(--p-gray-800);
+  --color-border: var(--p-gray-800);
+  --color-border-strong: var(--p-gray-750);
+  --color-border-input: var(--p-gray-650);
+
+  --color-text: #e9ebef;
+  --color-text-muted: #a9afba;
+  --color-text-subtle: #8c93a0;
+  --color-text-disabled: var(--p-gray-600);
+  --color-text-inverse: var(--p-gray-950);
+
+  --color-accent: var(--p-violet-550);
+  --color-accent-hover: var(--p-violet-600);
+  --color-accent-fg: var(--p-gray-0);
+  --color-accent-text: var(--p-violet-300);
+  --color-accent-soft: var(--p-violet-950);
+  --color-accent-border: var(--p-violet-700);
+  --color-focus: var(--p-violet-300);
+
+  --color-row-hover: #1a1c22;
+  --color-row-selected: var(--p-violet-950);
+  --color-row-active: var(--p-gray-850);
+
+  --color-success: var(--p-green-400);
+  --color-success-soft: var(--p-green-950);
+  --color-success-border: #1d4a30;
+  --color-info: var(--p-cyan-400);
+  --color-info-soft: var(--p-cyan-950);
+  --color-info-border: #164555;
+  --color-warning: var(--p-amber-400);
+  --color-warning-soft: var(--p-amber-950);
+  --color-warning-border: #53401c;
+  --color-danger: var(--p-red-400);
+  --color-danger-soft: var(--p-red-950);
+  --color-danger-border: #5c2427;
+  --color-danger-solid: var(--p-red-600);
+  --color-danger-solid-hover: #d63a3a;
+  --color-danger-fg: var(--p-gray-0);
+
+  --color-waveform: var(--p-violet-400);
+  --color-waveform-baseline: var(--p-gray-800);
+  --color-cover-placeholder: var(--p-gray-800);
+  --color-cover-placeholder-icon: var(--p-gray-500);
+  --color-skeleton: var(--p-gray-850);
+  --color-scrim: rgb(0 0 0 / 0.6);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 20px 56px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}

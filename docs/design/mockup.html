@@ -1,0 +1,1541 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HiResAudio Upload — Mockup</title>
+<link rel="stylesheet" href="../../src/styles/tokens.css">
+<style>
+/* ===================================================================
+   COMPONENT CSS — lift everything above "MOCKUP-ONLY" into src/styles/app.css.
+   Uses tokens from src/styles/tokens.css only (no raw colors).
+   =================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--font-line-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, p, dl, dd, figure { margin: 0; }
+button, input { font: inherit; color: inherit; }
+a { color: var(--color-accent-text); }
+
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-size: 0.95em; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+:focus-visible,
+.is-focus {
+  outline: var(--size-focus-ring) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: var(--size-icon);
+  height: var(--size-icon);
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon--lg { width: var(--size-icon-lg); height: var(--size-icon-lg); }
+.spin { animation: spin 900ms var(--ease-linear) infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- App shell ---------- */
+.app {
+  display: grid;
+  grid-template-rows: var(--size-topbar) minmax(0, 1fr);
+  height: 100%;
+  min-width: 1024px;
+  background: var(--color-bg);
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+.nav { display: flex; align-self: stretch; gap: var(--space-1); margin-left: var(--space-4); }
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.nav-item:hover { color: var(--color-text); }
+.nav-item[aria-current="page"] { color: var(--color-text); border-bottom-color: var(--color-accent); }
+.nav-item:focus-visible { outline-offset: -2px; }
+.count {
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 18px;
+}
+.topbar-spacer { flex: 1; }
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+.conn-dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-success); }
+
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--size-inspector);
+  min-height: 0;
+}
+.main--full { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1-5);
+  height: var(--size-control);
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.btn--primary { background: var(--color-accent); color: var(--color-accent-fg); }
+.btn--primary:hover,
+.btn--primary[aria-expanded="true"] { background: var(--color-accent-hover); }
+.btn--secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); box-shadow: var(--shadow-sm); }
+.btn--secondary:hover { background: var(--color-hover); }
+.btn--secondary[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent-border); color: var(--color-accent-text); }
+.btn--ghost { color: var(--color-text-muted); }
+.btn--ghost:hover { background: var(--color-hover); color: var(--color-text); }
+.btn--danger { background: var(--color-danger-solid); color: var(--color-danger-fg); }
+.btn--danger:hover { background: var(--color-danger-solid-hover); }
+.btn--danger-ghost { color: var(--color-danger); }
+.btn--danger-ghost:hover { background: var(--color-danger-soft); }
+.btn--sm { height: var(--size-control-sm); padding: 0 var(--space-2); font-size: var(--font-size-sm); }
+.btn--xs { height: 22px; padding: 0 var(--space-1-5); font-size: var(--font-size-xs); }
+.btn--icon { width: var(--size-control); padding: 0; }
+.btn--icon.btn--xs { width: 22px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.is-loading { cursor: progress; opacity: 0.8; }
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* ---------- Library ---------- */
+.library { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+  height: var(--size-toolbar);
+  padding: 0 var(--space-4);
+}
+.toolbar--selection {
+  margin: var(--space-2) var(--space-4) 0;
+  height: 40px;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-soft);
+}
+.toolbar--selection + .table-wrap { margin-top: var(--space-2); }
+.selection-count { display: inline-flex; align-items: center; gap: var(--space-1-5); color: var(--color-accent-text); font-weight: var(--font-weight-semibold); }
+.page-title { font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+.page-title--lg { font-size: var(--font-size-2xl); }
+.toolbar-meta { color: var(--color-text-subtle); font-size: var(--font-size-sm); }
+
+.table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 var(--space-4) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.tracks { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: var(--font-size-sm); }
+.w-check { width: 40px; }
+.w-cover { width: 44px; }
+.w-album { width: 17%; }
+.w-dur { width: 72px; }
+.w-quality { width: 204px; }
+.w-lufs { width: 58px; }
+.w-size { width: 84px; }
+.tracks th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  height: 34px;
+  padding: 0 var(--space-2);
+  background: var(--color-surface-sunken);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  white-space: nowrap;
+}
+.tracks td {
+  height: var(--size-row);
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-muted);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.tracks tbody tr:last-child td { border-bottom: 0; }
+.tracks tbody tr:hover td { background: var(--color-row-hover); }
+.tracks tr.is-active td { background: var(--color-row-active); }
+.tracks tr.is-selected td { background: var(--color-row-selected); }
+.tracks tr.is-active td:first-child { box-shadow: inset 3px 0 0 var(--color-accent); }
+.tracks tbody tr:focus-visible { outline-offset: -2px; }
+.tracks .col-check { padding-left: var(--space-3); padding-right: 0; }
+.tracks .col-num { text-align: right; }
+.tracks .col-last { padding-right: var(--space-4); }
+.col-title .cell-main,
+.col-title .cell-sub { display: block; overflow: hidden; text-overflow: ellipsis; }
+.cell-main { color: var(--color-text); font-weight: var(--font-weight-medium); font-size: var(--font-size-md); line-height: var(--font-line-tight); }
+.cell-sub { color: var(--color-text-muted); font-size: var(--font-size-xs); margin-top: 2px; }
+
+/* ---------- Cover ---------- */
+.cover {
+  display: block;
+  width: var(--size-cover-row);
+  height: var(--size-cover-row);
+  border-radius: var(--radius-sm);
+  background: var(--color-cover-placeholder);
+  object-fit: cover;
+  flex: none;
+}
+.cover--empty { display: grid; place-items: center; color: var(--color-cover-placeholder-icon); border: 1px dashed var(--color-border-strong); }
+.cover--detail { width: var(--size-cover-detail); height: var(--size-cover-detail); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+.cover--edit { width: 72px; height: 72px; border-radius: var(--radius-md); }
+.cover--detail.cover--empty .icon, .cover--edit.cover--empty .icon { width: 28px; height: 28px; }
+
+/* ---------- Quality badge ---------- */
+.qbadge {
+  --q-fg: var(--color-quality-none);
+  --q-soft: var(--color-quality-none-soft);
+  --q-border: var(--color-quality-none-border);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  max-width: 100%;
+  height: 22px;
+  padding: 0 var(--space-2) 0 var(--space-1-5);
+  border: 1px solid var(--q-border);
+  border-radius: var(--radius-sm);
+  background: var(--q-soft);
+  color: var(--q-fg);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.qbadge--full { --q-fg: var(--color-quality-full); --q-soft: var(--color-quality-full-soft); --q-border: var(--color-quality-full-border); }
+.qbadge--high { --q-fg: var(--color-quality-high); --q-soft: var(--color-quality-high-soft); --q-border: var(--color-quality-high-border); }
+.qbadge--medium { --q-fg: var(--color-quality-medium); --q-soft: var(--color-quality-medium-soft); --q-border: var(--color-quality-medium-border); }
+.qbadge--low { --q-fg: var(--color-quality-low); --q-soft: var(--color-quality-low-soft); --q-border: var(--color-quality-low-border); }
+.qbadge--lg { height: 28px; padding: 0 var(--space-3) 0 var(--space-2); font-size: var(--font-size-sm); }
+.qbadge--sm { height: 20px; }
+.qmeter { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; flex: none; }
+.qmeter i { display: block; width: 3px; border-radius: 1px; background: color-mix(in srgb, currentColor 25%, transparent); }
+.qmeter i:nth-child(1) { height: 4px; }
+.qmeter i:nth-child(2) { height: 6px; }
+.qmeter i:nth-child(3) { height: 8px; }
+.qmeter i:nth-child(4) { height: 10px; }
+.qmeter i.on { background: currentColor; }
+.qbadge--lg .qmeter { height: 12px; }
+.qbadge--lg .qmeter i:nth-child(4) { height: 12px; }
+
+/* ---------- Inspector (detail / upload side panel) ---------- */
+.inspector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+}
+.inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: var(--size-toolbar);
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.inspector-title { font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); }
+.inspector-body { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-4); overflow: auto; }
+.section-label { margin-bottom: var(--space-2); color: var(--color-text-subtle); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.section-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+.section-row .section-label { margin: 0; }
+
+.detail-hero { display: grid; grid-template-columns: var(--size-cover-detail) minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.detail-id { min-width: 0; }
+.detail-title { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); line-height: var(--font-line-tight); }
+.detail-sub { color: var(--color-text-muted); font-size: var(--font-size-sm); margin-top: 2px; }
+.detail-actions { display: flex; gap: var(--space-1); margin-top: var(--space-2); }
+
+.hint { display: flex; gap: var(--space-1-5); margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--font-size-xs); line-height: var(--font-line-base); }
+.hint .icon { margin-top: 1px; color: var(--color-text-subtle); }
+
+/* Bandwidth meter: scale 10 kHz → Nyquist, zones = quality thresholds (LC §5.2) */
+.bandwidth-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-1-5); font-size: var(--font-size-sm); }
+.bandwidth-label { color: var(--color-text-muted); }
+.bandwidth-value { font-weight: var(--font-weight-semibold); }
+.bw-track { position: relative; display: flex; height: 10px; margin: 3px 0; border-radius: var(--radius-xs); }
+.bw-zone:first-child { border-radius: var(--radius-xs) 0 0 var(--radius-xs); }
+.bw-zone:nth-child(4) { border-radius: 0 var(--radius-xs) var(--radius-xs) 0; }
+.bw-fill { border-radius: var(--radius-xs) 0 0 var(--radius-xs); }
+.bw-zone { height: 100%; }
+.bw-zone + .bw-zone { border-left: 1px solid var(--color-surface); }
+.bw-zone--low { background: var(--color-quality-low-border); }
+.bw-zone--medium { background: var(--color-quality-medium-border); }
+.bw-zone--high { background: var(--color-quality-high-border); }
+.bw-zone--full { background: var(--color-quality-full-border); }
+.bw-fill { position: absolute; inset: 0 auto 0 0; background: var(--color-quality-medium); }
+.bw-needle { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--color-text); }
+.bw-scale { position: relative; height: 16px; margin-top: 2px; color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.bw-scale span { position: absolute; transform: translateX(-50%); }
+.bw-scale span:first-child { transform: none; }
+.bw-scale span:last-child { transform: translateX(-100%); }
+
+/* Waveform: 800 peaks (0..1), mirrored around a baseline. App draws the same on <canvas>. */
+.waveform {
+  padding: var(--space-2) var(--space-2) 0;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.waveform svg { display: block; width: 100%; height: 64px; }
+.waveform-bars { stroke: var(--color-waveform); stroke-width: 0.75; fill: none; }
+.waveform-base { stroke: var(--color-waveform-baseline); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.waveform-ticks { position: relative; height: 20px; margin: 0 2px; color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.waveform-ticks span { position: absolute; top: 2px; transform: translateX(-50%); }
+.waveform-ticks span:first-child { transform: none; }
+.waveform-ticks span:last-child { transform: translateX(-100%); }
+
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.metric-label { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.metric-value { font-family: var(--font-display); font-size: var(--font-size-3xl); font-weight: var(--font-weight-semibold); line-height: 1.1; letter-spacing: -0.01em; }
+.metric-value small { margin-left: 3px; font-family: var(--font-sans); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); letter-spacing: 0; }
+.metric--warn { border-color: var(--color-warning-border); background: var(--color-warning-soft); }
+.metric-note { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--color-warning); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.metric-note .icon { width: 13px; height: 13px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.stats > div { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--color-surface-sunken); }
+.stats dt { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.stats dd { font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+.stats small, .kv small { color: var(--color-text-subtle); font-weight: var(--font-weight-regular); font-size: var(--font-size-xs); }
+
+.kv { display: grid; grid-template-columns: 112px minmax(0, 1fr); font-size: var(--font-size-sm); }
+.kv dt, .kv dd { min-height: 30px; display: flex; align-items: center; border-bottom: 1px solid var(--color-border); }
+.kv dt { color: var(--color-text-muted); }
+.kv dd { gap: var(--space-1); min-width: 0; }
+.kv-id .mono { flex: 1; }
+
+/* ---------- Upload ---------- */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-5) var(--space-4);
+  border: 1.5px dashed var(--color-border-input);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  text-align: center;
+  transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out);
+}
+.dropzone-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-accent-text);
+}
+.dropzone-title { color: var(--color-text); font-weight: var(--font-weight-semibold); }
+.dropzone-hint { color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.dropzone--compact { flex-direction: row; gap: var(--space-3); padding: var(--space-3); text-align: left; }
+.dropzone--compact .dropzone-icon { width: 32px; height: 32px; margin: 0; }
+.dropzone-text { flex: 1; min-width: 0; }
+.dropzone.is-dragover { border-style: solid; border-color: var(--color-accent); background: var(--color-accent-soft); }
+.dropzone.is-dragover .dropzone-title { color: var(--color-accent-text); }
+
+.queue-summary { margin-bottom: var(--space-2); color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.queue { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.qitem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  row-gap: 2px;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.qitem:last-child { border-bottom: 0; }
+.qitem-icon { display: grid; grid-row: span 2; align-self: start; padding-top: 1px; }
+.qitem-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+.qitem-meta { grid-column: 2 / 4; display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.qitem-error { color: var(--color-text-muted); }
+.qitem .progress { grid-column: 2 / 4; margin-top: var(--space-1); }
+.qitem--queued .qitem-icon { color: var(--color-text-subtle); }
+.qitem--analysing .qitem-icon { color: var(--color-info); }
+.qitem--uploading .qitem-icon { color: var(--color-accent-text); }
+.qitem--done .qitem-icon { color: var(--color-success); }
+.qitem--duplicate .qitem-icon { color: var(--color-text-muted); }
+.qitem--error { background: color-mix(in srgb, var(--color-danger-soft) 55%, transparent); }
+.qitem--error .qitem-icon { color: var(--color-danger); }
+
+.stage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 20px;
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  background: var(--color-surface-sunken);
+}
+.stage--duplicate { background: transparent; box-shadow: inset 0 0 0 1px var(--color-border-strong); }
+.stage--analysing { color: var(--color-info); background: var(--color-info-soft); }
+.stage--uploading { color: var(--color-accent-text); background: var(--color-accent-soft); }
+.stage--done { color: var(--color-success); background: var(--color-success-soft); }
+.stage--error { color: var(--color-danger); background: var(--color-danger-soft); }
+.link { color: var(--color-accent-text); font-weight: var(--font-weight-medium); text-decoration: underline; text-underline-offset: 2px; }
+
+.progress { height: 4px; border-radius: var(--radius-full); background: var(--color-border); overflow: hidden; }
+.progress > span { display: block; height: 100%; border-radius: inherit; background: var(--color-accent); transition: width var(--duration-base) var(--ease-out); }
+.progress--indeterminate > span { width: 30%; background: var(--color-info); animation: indeterminate 1200ms var(--ease-linear) infinite; }
+@keyframes indeterminate { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: none; }
+  .progress--indeterminate > span { width: 100%; opacity: 0.5; animation: none; }
+}
+
+/* ---------- Dialog ---------- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  background: var(--color-scrim);
+}
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: var(--size-dialog);
+  max-width: calc(100vw - 64px);
+  max-height: calc(100% - 64px);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dialog);
+}
+.dialog--sm { width: 420px; }
+.dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-3) var(--space-3) var(--space-5); }
+.dialog-title { font-family: var(--font-display); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+.dialog-desc { margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.dialog-body { padding: 0 var(--space-5) var(--space-5); overflow: auto; }
+.dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.dialog-foot-note { margin-right: auto; color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.cover-edit { display: grid; grid-template-columns: 72px 1fr; gap: var(--space-3); align-items: center; margin-bottom: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); }
+.cover-edit .field-help { margin: 2px 0 var(--space-2); }
+.form-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); }
+.del-list { margin: 0; padding: var(--space-2) var(--space-3); list-style: none; border-radius: var(--radius-md); background: var(--color-surface-sunken); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.del-list li + li { margin-top: var(--space-1); }
+.del-list b { color: var(--color-text); font-weight: var(--font-weight-semibold); }
+
+/* ---------- Form field ---------- */
+.field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.field + .field { margin-top: var(--space-3); }
+.form-grid .field + .field { margin-top: 0; }
+.field-label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-text); }
+.req { color: var(--color-danger); }
+.field-help { color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.field-error { display: flex; align-items: center; gap: var(--space-1); color: var(--color-danger); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); }
+.field-error .icon { width: 14px; height: 14px; }
+.input {
+  width: 100%;
+  height: var(--size-control);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.input.mono { font-size: var(--font-size-sm); }
+.input:hover { border-color: var(--color-text-subtle); }
+.input:focus-visible,
+.input.is-focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 28%, transparent);
+}
+.input[aria-invalid="true"] { border-color: var(--color-danger); }
+.input[aria-invalid="true"]:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 25%, transparent); }
+.input:disabled { background: var(--color-surface-sunken); color: var(--color-text-disabled); border-color: var(--color-border-strong); cursor: not-allowed; }
+.input-wrap { position: relative; }
+.input-wrap .input { padding-right: 36px; }
+.input-action { position: absolute; top: 5px; right: 5px; }
+
+/* ---------- Settings page ---------- */
+.page { position: relative; overflow: auto; padding: var(--space-6) var(--space-8); }
+.page-head { margin-bottom: var(--space-5); }
+.page-desc { margin-top: var(--space-1); color: var(--color-text-muted); }
+.settings-layout { display: grid; grid-template-columns: minmax(0, 600px) 300px; gap: var(--space-5); align-items: start; }
+.card { padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.card-title { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); }
+.card--note { background: var(--color-surface-sunken); }
+.card--note .card-title { margin-bottom: var(--space-2); }
+.note-list { margin: 0; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.note-list li + li { margin-top: var(--space-1-5); }
+.form-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.test-result { display: inline-flex; align-items: center; gap: var(--space-1-5); margin-right: auto; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+.test-result--ok { color: var(--color-success); }
+.test-result--error { color: var(--color-danger); }
+
+/* ---------- Toast ---------- */
+.toast-region { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: var(--z-toast); display: flex; flex-direction: column; gap: var(--space-2); }
+.toast {
+  --toast-accent: var(--color-info);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 360px;
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-left: 3px solid var(--toast-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+}
+.toast > .icon { margin-top: 1px; color: var(--toast-accent); }
+.toast > div { flex: 1; min-width: 0; }
+.toast-title { font-weight: var(--font-weight-semibold); }
+.toast-msg { color: var(--color-text-muted); }
+.toast--success { --toast-accent: var(--color-success); }
+.toast--error { --toast-accent: var(--color-danger); }
+
+/* ---------- Banner / empty / skeleton ---------- */
+.banner { display: flex; gap: var(--space-2); padding: var(--space-3); border: 1px solid; border-radius: var(--radius-md); font-size: var(--font-size-sm); }
+.banner > .icon { margin-top: 1px; }
+.banner-title { font-weight: var(--font-weight-semibold); }
+.banner-msg { color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.banner--danger { background: var(--color-danger-soft); border-color: var(--color-danger-border); }
+.banner--danger > .icon, .banner--danger .banner-title { color: var(--color-danger); }
+.banner--info { background: var(--color-info-soft); border-color: var(--color-info-border); }
+.banner--info > .icon, .banner--info .banner-title { color: var(--color-info); }
+
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-1-5); padding: var(--space-6) var(--space-4); text-align: center; }
+.empty-icon { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: var(--space-1); border-radius: var(--radius-full); background: var(--color-accent-soft); color: var(--color-accent-text); }
+.empty-title { font-weight: var(--font-weight-semibold); }
+.empty-desc { color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-2); }
+
+.skeleton { display: block; height: 10px; border-radius: var(--radius-xs); background: var(--color-skeleton); animation: pulse 1400ms var(--ease-out) infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+.skeleton-row { display: flex; align-items: center; gap: var(--space-3); height: var(--size-row); padding: 0 var(--space-3); border-bottom: 1px solid var(--color-border); }
+.skeleton-row:last-child { border-bottom: 0; }
+.skeleton--cover { width: var(--size-cover-row); height: var(--size-cover-row); border-radius: var(--radius-sm); flex: none; }
+.skeleton-lines { display: flex; flex: 1; flex-direction: column; gap: var(--space-1-5); }
+.skeleton--badge { width: 120px; height: 20px; border-radius: var(--radius-sm); }
+
+/* ===================================================================
+   MOCKUP-ONLY (board layout; do not lift into app.css)
+   =================================================================== */
+.mk-board { height: auto; padding: var(--space-6) var(--space-8) var(--space-12); background: var(--color-bg); }
+.mk-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); max-width: 1280px; margin-bottom: var(--space-4); }
+.mk-h1 { font-family: var(--font-display); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); }
+.mk-sub { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.mk-sub code, .mk-sub .mono { font-family: var(--font-mono); font-size: var(--font-size-xs); }
+.mk-theme { display: flex; gap: var(--space-1); }
+.mk-caption { max-width: 1280px; margin: var(--space-8) 0 var(--space-2); font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); }
+.mk-caption span { margin-left: var(--space-2); color: var(--color-text-muted); font-weight: var(--font-weight-regular); font-size: var(--font-size-sm); }
+.mk-frame {
+  position: relative;
+  width: 1280px;
+  height: 800px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transform: translateZ(0); /* makes position:fixed children (scrim, toasts) stay inside the frame */
+}
+.mk-frame .scrim { position: absolute; }
+.sheet { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); width: 1280px; }
+.sheet-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.sheet-card--wide { grid-column: span 2; }
+.sheet-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.sheet-title:not(:first-child) { margin-top: var(--space-3); }
+.sheet-note { color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.sheet-stack { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1-5); }
+.sheet-stack + .sheet-stack { margin-top: var(--space-2); }
+.sheet-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.sheet .field + .field { margin-top: var(--space-1); }
+.sheet .dialog { max-width: 100%; max-height: none; box-shadow: var(--shadow-md); }
+.sheet .toast { width: 100%; }
+.sheet-card--full { grid-column: 1 / -1; }
+.state-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
+.state-grid > .empty, .state-grid > .skeleton-list { border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+
+</style>
+</head>
+<body class="mk-board">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="M3 6h11M3 11h11M3 16h7"/><path d="M18 16V5l3-1"/><circle cx="16" cy="16" r="2.5"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></symbol><symbol id="i-alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></symbol><symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M10.3 4 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4M12 17v.01"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol><symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5a1.5 1.5 0 0 0-1.5-1.5H5A1.5 1.5 0 0 0 3.5 5v9A1.5 1.5 0 0 0 5 15.5h3.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="m14.5 7.5 3 3"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.8-3.5M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.8 3.5M20 20v-4h-4"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="m20.5 15-4.5-4.5L5 20.5"/></symbol><symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h1.5M7 8.5v7M10.5 5v14M14 8v8M17.5 10v4M21 12h-.5"/></symbol><symbol id="i-file-audio" viewBox="0 0 24 24"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M10 17.5v-5l4-1v4"/><circle cx="9" cy="17.5" r="1"/><circle cx="13" cy="15.5" r="1"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.5 1.6A3.3 3.3 0 0 0 7 18.5Z"/></symbol></svg>
+<header class="mk-head">
+  <div>
+    <h1 class="mk-h1">HiResAudio Upload · UI mockup</h1>
+    <p class="mk-sub">Hướng "Mastering Console". Khung 1280 × 800. Tokens: <code>src/styles/tokens.css</code>. Spec: <code>docs/design/README.md</code>.</p>
+  </div>
+  <div class="mk-theme" role="group" aria-label="Giao diện">
+    <button class="btn btn--secondary btn--sm" type="button" data-set-theme="auto" aria-pressed="true">Theo hệ thống</button>
+    <button class="btn btn--secondary btn--sm" type="button" data-set-theme="light" aria-pressed="false">Sáng</button>
+    <button class="btn btn--secondary btn--sm" type="button" data-set-theme="dark" aria-pressed="false">Tối</button>
+  </div>
+</header>
+
+<h2 class="mk-caption">1 · Thư viện + Chi tiết <span>đa chọn 2 bài (checkbox, nền tím nhạt) · bài đang mở chi tiết (vạch trái) · 1 bài không có ảnh bìa</span></h2>
+<div class="mk-frame">
+  <div class="app">
+    <header class="topbar">
+  <div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wave"/></svg></span>HiResAudio Upload</div>
+  <nav class="nav" aria-label="Điều hướng chính">
+    <a class="nav-item" href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg>Thư viện <span class="count num">8</span></a>
+    <a class="nav-item" href="#" ><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Cài đặt</a>
+  </nav>
+  <div class="topbar-spacer"></div>
+  <span class="conn"><span class="conn-dot" aria-hidden="true"></span>Đã kết nối · <span class="mono">hires-library</span></span>
+  <button class="btn btn--primary" type="button" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+</header>
+    <div class="main">
+      <section class="library" aria-label="Thư viện">
+        <div class="toolbar toolbar--selection" role="region" aria-label="Thao tác hàng loạt">
+  <span class="selection-count"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Đã chọn <span class="num">2</span> bài</span>
+  <button class="btn btn--ghost btn--sm" type="button">Bỏ chọn</button>
+  <div class="topbar-spacer"></div>
+  <button class="btn btn--danger btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá 2 bài</button>
+</div>
+        <div class="table-wrap">
+  <table class="tracks">
+    <colgroup><col class="w-check"><col class="w-cover"><col><col class="w-album"><col class="w-dur"><col class="w-quality"><col class="w-lufs"><col class="w-size"></colgroup>
+    <thead><tr>
+      <th class="col-check"><input type="checkbox" aria-label="Chọn tất cả" data-indeterminate></th>
+      <th><span class="sr-only">Ảnh bìa</span></th>
+      <th>Tiêu đề / Nghệ sĩ</th>
+      <th>Album</th>
+      <th class="col-num">Thời lượng</th>
+      <th>Chất lượng</th>
+      <th class="col-num" title="Integrated loudness">LUFS</th>
+      <th class="col-num col-last">Dung lượng</th>
+    </tr></thead>
+    <tbody>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Đêm Sài Gòn"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Phố Đêm" style="background:linear-gradient(135deg,hsl(330 62% 52%),hsl(18 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Đêm Sài Gòn</span><span class="cell-sub">Ngọc Lan Vy</span></td>
+      <td class="col-album">Phố Đêm</td>
+      <td class="col-num num">4:12</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-9.8</td>
+      <td class="col-num col-last num">9.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Mưa Trên Phố Huế"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cố Đô" style="background:linear-gradient(135deg,hsl(205 62% 52%),hsl(253 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Mưa Trên Phố Huế</span><span class="cell-sub">Trần Minh Khang</span></td>
+      <td class="col-album">Cố Đô</td>
+      <td class="col-num num">5:03</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 245 · High (~V0–V2)</span></td>
+      <td class="col-num num">-11.4</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr class="is-active" aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Gió Lộng Tây Nguyên"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Gió Lộng Tây Nguyên</span><span class="cell-sub">Hà My & Đồi Thông</span></td>
+      <td class="col-album">Cao Nguyên</td>
+      <td class="col-num num">3:47</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span></td>
+      <td class="col-num num">-8.1</td>
+      <td class="col-num col-last num">8.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Bên Kia Sông"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Mùa Nước Nổi" style="background:linear-gradient(135deg,hsl(160 62% 52%),hsl(208 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Bên Kia Sông</span><span class="cell-sub">Lê Quang Huy</span></td>
+      <td class="col-album">Mùa Nước Nổi</td>
+      <td class="col-num num">4:31</td>
+      <td class="col-quality"><span class="qbadge qbadge--low"><span class="qmeter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>MP3 128 · Nguồn kém</span></td>
+      <td class="col-num num">-12.6</td>
+      <td class="col-num col-last num">4.3 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Thu Cạn"></td>
+      <td class="col-cover"><span class="cover cover--empty" role="img" aria-label="Không có ảnh bìa"><svg class="icon" aria-hidden="true"><use href="#i-music"/></svg></span></td>
+      <td class="col-title"><span class="cell-main">Thu Cạn</span><span class="cell-sub">Phạm Thu Trang</span></td>
+      <td class="col-album">Lá Vàng</td>
+      <td class="col-num num">3:58</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-10.2</td>
+      <td class="col-num col-last num">9.1 MB</td>
+    </tr>
+<tr class="is-selected" aria-selected="true">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Phố Cũ Mùa Đông" checked></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Một Thời Để Nhớ" style="background:linear-gradient(135deg,hsl(250 62% 52%),hsl(298 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Phố Cũ Mùa Đông</span><span class="cell-sub">Đoàn Bảo Nam</span></td>
+      <td class="col-album">Một Thời Để Nhớ</td>
+      <td class="col-num num">6:30</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 190 · High (~V0–V2)</span></td>
+      <td class="col-num num">-13.1</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Ru Con Miền Tây"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ca Dao Mẹ" style="background:linear-gradient(135deg,hsl(95 62% 52%),hsl(143 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Ru Con Miền Tây</span><span class="cell-sub">Nguyễn Kim Ngân</span></td>
+      <td class="col-album">Ca Dao Mẹ</td>
+      <td class="col-num num">2:54</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 160 · Medium</span></td>
+      <td class="col-num num">-14.7</td>
+      <td class="col-num col-last num">3.5 MB</td>
+    </tr>
+<tr class="is-selected" aria-selected="true">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Nắng Ấm Xa Dần" checked></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ngày Xưa Ơi" style="background:linear-gradient(135deg,hsl(45 62% 52%),hsl(93 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Nắng Ấm Xa Dần</span><span class="cell-sub">Vũ Đăng Khoa</span></td>
+      <td class="col-album">Ngày Xưa Ơi</td>
+      <td class="col-num num">4:45</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-7.9</td>
+      <td class="col-num col-last num">11.0 MB</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+      </section>
+      <aside class="inspector" aria-label="Chi tiết bài hát">
+  <div class="inspector-head">
+    <h2 class="inspector-title">Chi tiết</h2>
+    <button class="btn btn--ghost btn--icon" type="button" aria-label="Đóng chi tiết"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="inspector-body">
+    <div class="detail-hero">
+      <span class="cover cover--detail" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span>
+      <div class="detail-id">
+        <h3 class="detail-title">Gió Lộng Tây Nguyên</h3>
+        <p class="detail-sub">Hà My & Đồi Thông</p>
+        <p class="detail-sub">Cao Nguyên · 2024 · Dân gian đương đại</p>
+        <div class="detail-actions">
+          <button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pencil"/></svg>Sửa</button>
+          <button class="btn btn--danger-ghost btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá</button>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-row"><h4 class="section-label">Chất lượng</h4><span class="qbadge qbadge--medium qbadge--lg"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span></div>
+      <div class="bandwidth" role="img" aria-label="Băng thông thực 17.1 kHz, mức medium">
+        <div class="bandwidth-head"><span class="bandwidth-label">Băng thông thực</span><span class="bandwidth-value num">17.15 kHz</span></div>
+        <div class="bw-track">
+          <span class="bw-zone bw-zone--low" style="width:45.6%"></span><span class="bw-zone bw-zone--medium" style="width:20.8%"></span><span class="bw-zone bw-zone--high" style="width:12.4%"></span><span class="bw-zone bw-zone--full" style="flex:1"></span>
+          <span class="bw-fill" style="width:59.3%;background:var(--color-quality-medium)"></span>
+          <span class="bw-needle" style="left:59.3%"></span>
+        </div>
+        <div class="bw-scale num" aria-hidden="true"><span style="left:0">10k</span><span style="left:45.6%">15.5k</span><span style="left:66.4%">18k</span><span style="left:78.8%">19.5k</span><span style="left:100%">22.05k</span></div>
+      </div>
+      <p class="hint"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>File ghi 320 kbps nhưng nội dung dừng ở ~17 kHz: nhiều khả năng là bản 128 kbps được encode lại.</span></p>
+    </section>
+
+    <section>
+      <h4 class="section-label">Waveform</h4>
+      <figure class="waveform">
+        <svg viewBox="0 0 800 80" preserveAspectRatio="none" role="img" aria-label="Waveform của Gió Lộng Tây Nguyên">
+          <line class="waveform-base" x1="0" y1="40" x2="800" y2="40"/>
+          <path class="waveform-bars" d="M0.5 39.5V40.5M1.5 39.4V40.6M2.5 38.6V41.4M3.5 37.8V42.2M4.5 37.5V42.5M5.5 36.7V43.3M6.5 36.3V43.7M7.5 35.2V44.8M8.5 34.6V45.4M9.5 33.8V46.2M10.5 33.1V46.9M11.5 32.8V47.2M12.5 31.1V48.9M13.5 30.6V49.4M14.5 31.3V48.7M15.5 30.3V49.7M16.5 29.6V50.4M17.5 28.2V51.8M18.5 29.8V50.2M19.5 28.6V51.4M20.5 27.8V52.2M21.5 28.3V51.7M22.5 28.1V51.9M23.5 27.9V52.1M24.5 27.9V52.1M25.5 28.8V51.2M26.5 28.4V51.6M27.5 29.2V50.8M28.5 27.5V52.5M29.5 28.3V51.7M30.5 27.8V52.2M31.5 28.0V52.0M32.5 28.7V51.3M33.5 29.5V50.5M34.5 28.0V52.0M35.5 29.7V50.3M36.5 28.9V51.1M37.5 27.7V52.3M38.5 27.3V52.7M39.5 26.6V53.4M40.5 29.5V50.5M41.5 28.7V51.3M42.5 29.0V51.0M43.5 28.0V52.0M44.5 29.5V50.5M45.5 27.1V52.9M46.5 28.6V51.4M47.5 29.2V50.8M48.5 28.0V52.0M49.5 27.8V52.2M50.5 27.9V52.1M51.5 29.0V51.0M52.5 26.2V53.8M53.5 28.1V51.9M54.5 29.0V51.0M55.5 28.1V51.9M56.5 26.7V53.3M57.5 28.7V51.3M58.5 28.9V51.1M59.5 26.7V53.3M60.5 27.0V53.0M61.5 26.6V53.4M62.5 28.7V51.3M63.5 28.0V52.0M64.5 28.8V51.2M65.5 26.5V53.5M66.5 26.6V53.4M67.5 28.7V51.3M68.5 28.5V51.5M69.5 28.5V51.5M70.5 26.5V53.5M71.5 27.7V52.3M72.5 26.7V53.3M73.5 28.8V51.2M74.5 28.5V51.5M75.5 28.3V51.7M76.5 27.8V52.2M77.5 28.6V51.4M78.5 26.8V53.2M79.5 27.7V52.3M80.5 27.5V52.5M81.5 27.8V52.2M82.5 27.0V53.0M83.5 28.7V51.3M84.5 28.4V51.6M85.5 26.9V53.1M86.5 26.5V53.5M87.5 26.1V53.9M88.5 27.3V52.7M89.5 27.9V52.1M90.5 27.5V52.5M91.5 25.5V54.5M92.5 26.8V53.2M93.5 25.9V54.1M94.5 26.4V53.6M95.5 26.2V53.8M96.5 27.7V52.3M97.5 26.7V53.3M98.5 26.7V53.3M99.5 24.4V55.6M100.5 23.9V56.1M101.5 24.9V55.1M102.5 24.6V55.4M103.5 22.5V57.5M104.5 21.2V58.8M105.5 21.0V59.0M106.5 21.8V58.2M107.5 21.4V58.6M108.5 22.5V57.5M109.5 19.9V60.1M110.5 21.7V58.3M111.5 19.8V60.2M112.5 21.1V58.9M113.5 21.0V59.0M114.5 18.9V61.1M115.5 16.8V63.2M116.5 18.7V61.3M117.5 14.9V65.1M118.5 20.2V59.8M119.5 18.4V61.6M120.5 17.8V62.2M121.5 19.8V60.2M122.5 18.2V61.8M123.5 20.5V59.5M124.5 18.1V61.9M125.5 19.7V60.3M126.5 20.5V59.5M127.5 19.1V60.9M128.5 18.9V61.1M129.5 17.7V62.3M130.5 18.8V61.2M131.5 19.2V60.8M132.5 17.3V62.7M133.5 21.0V59.0M134.5 18.1V61.9M135.5 16.5V63.5M136.5 20.4V59.6M137.5 17.3V62.7M138.5 19.9V60.1M139.5 17.2V62.8M140.5 17.1V62.9M141.5 20.3V59.7M142.5 16.2V63.8M143.5 17.6V62.4M144.5 19.0V61.0M145.5 17.4V62.6M146.5 20.1V59.9M147.5 16.5V63.5M148.5 18.0V62.0M149.5 19.9V60.1M150.5 20.8V59.2M151.5 19.7V60.3M152.5 18.3V61.7M153.5 19.0V61.0M154.5 18.8V61.2M155.5 18.0V62.0M156.5 14.7V65.3M157.5 17.0V63.0M158.5 19.3V60.7M159.5 19.2V60.8M160.5 17.0V63.0M161.5 18.0V62.0M162.5 18.3V61.7M163.5 17.4V62.6M164.5 16.8V63.2M165.5 16.6V63.4M166.5 19.6V60.4M167.5 20.8V59.2M168.5 16.6V63.4M169.5 17.0V63.0M170.5 18.1V61.9M171.5 17.9V62.1M172.5 18.5V61.5M173.5 20.6V59.4M174.5 19.8V60.2M175.5 16.6V63.4M176.5 16.9V63.1M177.5 20.2V59.8M178.5 19.7V60.3M179.5 16.5V63.5M180.5 16.0V64.0M181.5 17.2V62.8M182.5 15.8V64.2M183.5 19.8V60.2M184.5 18.4V61.6M185.5 20.3V59.7M186.5 17.1V62.9M187.5 17.7V62.3M188.5 20.1V59.9M189.5 19.9V60.1M190.5 15.8V64.2M191.5 17.3V62.7M192.5 20.3V59.7M193.5 18.3V61.7M194.5 19.2V60.8M195.5 14.8V65.2M196.5 15.8V64.2M197.5 19.2V60.8M198.5 17.8V62.2M199.5 18.0V62.0M200.5 20.1V59.9M201.5 18.3V61.7M202.5 19.0V61.0M203.5 19.8V60.2M204.5 17.7V62.3M205.5 19.6V60.4M206.5 16.5V63.5M207.5 19.8V60.2M208.5 15.7V64.3M209.5 19.7V60.3M210.5 18.4V61.6M211.5 19.4V60.6M212.5 19.1V60.9M213.5 19.9V60.1M214.5 18.1V61.9M215.5 18.1V61.9M216.5 16.1V63.9M217.5 20.3V59.7M218.5 18.8V61.2M219.5 17.4V62.6M220.5 17.4V62.6M221.5 16.8V63.2M222.5 17.7V62.3M223.5 19.9V60.1M224.5 18.1V61.9M225.5 17.1V62.9M226.5 17.5V62.5M227.5 17.1V62.9M228.5 17.5V62.5M229.5 16.7V63.3M230.5 15.7V64.3M231.5 18.6V61.4M232.5 16.5V63.5M233.5 20.1V59.9M234.5 17.5V62.5M235.5 17.5V62.5M236.5 17.5V62.5M237.5 15.6V64.4M238.5 18.0V62.0M239.5 16.0V64.0M240.5 15.9V64.1M241.5 16.9V63.1M242.5 16.9V63.1M243.5 15.6V64.4M244.5 19.7V60.3M245.5 16.0V64.0M246.5 16.3V63.7M247.5 18.1V61.9M248.5 16.7V63.3M249.5 16.2V63.8M250.5 19.0V61.0M251.5 17.9V62.1M252.5 18.1V61.9M253.5 18.4V61.6M254.5 17.0V63.0M255.5 15.5V64.5M256.5 18.8V61.2M257.5 18.6V61.4M258.5 16.7V63.3M259.5 19.1V60.9M260.5 16.8V63.2M261.5 18.3V61.7M262.5 18.0V62.0M263.5 16.7V63.3M264.5 15.7V64.3M265.5 17.7V62.3M266.5 17.4V62.6M267.5 16.5V63.5M268.5 15.1V64.9M269.5 16.5V63.5M270.5 18.7V61.3M271.5 19.5V60.5M272.5 15.5V64.5M273.5 15.5V64.5M274.5 18.8V61.2M275.5 19.5V60.5M276.5 19.7V60.3M277.5 18.5V61.5M278.5 16.3V63.7M279.5 19.3V60.7M280.5 16.1V63.9M281.5 15.4V64.6M282.5 16.4V63.6M283.5 15.8V64.2M284.5 19.1V60.9M285.5 16.4V63.6M286.5 16.4V63.6M287.5 19.7V60.3M288.5 18.3V61.7M289.5 18.3V61.7M290.5 14.7V65.3M291.5 13.1V66.9M292.5 15.5V64.5M293.5 12.1V67.9M294.5 14.6V65.4M295.5 15.4V64.6M296.5 11.4V68.6M297.5 9.8V70.2M298.5 13.1V66.9M299.5 5.1V74.9M300.5 12.3V67.7M301.5 9.6V70.4M302.5 6.9V73.1M303.5 8.8V71.2M304.5 10.4V69.6M305.5 6.0V74.0M306.5 10.1V69.9M307.5 7.1V72.9M308.5 6.9V73.1M309.5 6.7V73.3M310.5 11.7V68.3M311.5 5.3V74.7M312.5 3.3V76.7M313.5 10.8V69.2M314.5 10.2V69.8M315.5 5.9V74.1M316.5 8.6V71.4M317.5 10.2V69.8M318.5 7.0V73.0M319.5 9.7V70.3M320.5 10.7V69.3M321.5 10.9V69.1M322.5 8.3V71.7M323.5 5.0V75.0M324.5 9.9V70.1M325.5 6.2V73.8M326.5 8.0V72.0M327.5 10.2V69.8M328.5 9.3V70.7M329.5 5.0V75.0M330.5 4.6V75.4M331.5 10.0V70.0M332.5 10.0V70.0M333.5 6.0V74.0M334.5 5.9V74.1M335.5 10.3V69.7M336.5 5.5V74.5M337.5 7.2V72.8M338.5 2.8V77.2M339.5 6.8V73.2M340.5 9.0V71.0M341.5 10.8V69.2M342.5 7.3V72.7M343.5 11.1V68.9M344.5 11.4V68.6M345.5 5.1V74.9M346.5 6.5V73.5M347.5 7.3V72.7M348.5 5.8V74.2M349.5 5.4V74.6M350.5 9.4V70.6M351.5 2.6V77.4M352.5 10.1V69.9M353.5 4.9V75.1M354.5 9.6V70.4M355.5 10.5V69.5M356.5 9.1V70.9M357.5 6.9V73.1M358.5 10.0V70.0M359.5 10.1V69.9M360.5 8.2V71.8M361.5 8.4V71.6M362.5 6.2V73.8M363.5 9.6V70.4M364.5 2.6V77.4M365.5 5.1V74.9M366.5 4.5V75.5M367.5 10.3V69.7M368.5 7.5V72.5M369.5 8.5V71.5M370.5 7.4V72.6M371.5 8.7V71.3M372.5 10.7V69.3M373.5 8.4V71.6M374.5 7.8V72.2M375.5 6.1V73.9M376.5 6.8V73.2M377.5 4.2V75.8M378.5 5.5V74.5M379.5 11.2V68.8M380.5 5.3V74.7M381.5 8.2V71.8M382.5 6.8V73.2M383.5 6.9V73.1M384.5 10.8V69.2M385.5 8.1V71.9M386.5 4.9V75.1M387.5 11.3V68.7M388.5 6.4V73.6M389.5 9.2V70.8M390.5 5.3V74.7M391.5 10.6V69.4M392.5 10.7V69.3M393.5 5.1V74.9M394.5 4.8V75.2M395.5 6.0V74.0M396.5 4.4V75.6M397.5 11.1V68.9M398.5 8.7V71.3M399.5 9.1V70.9M400.5 10.7V69.3M401.5 4.2V75.8M402.5 9.5V70.5M403.5 7.9V72.1M404.5 9.1V70.9M405.5 5.2V74.8M406.5 5.5V74.5M407.5 10.5V69.5M408.5 4.3V75.7M409.5 10.2V69.8M410.5 4.0V76.0M411.5 9.7V70.3M412.5 7.2V72.8M413.5 8.8V71.2M414.5 8.2V71.8M415.5 7.5V72.5M416.5 3.9V76.1M417.5 8.2V71.8M418.5 11.3V68.7M419.5 13.6V66.4M420.5 14.9V65.1M421.5 14.8V65.2M422.5 12.7V67.3M423.5 13.1V66.9M424.5 15.5V64.5M425.5 15.1V64.9M426.5 15.2V64.8M427.5 17.5V62.5M428.5 20.1V59.9M429.5 17.6V62.4M430.5 20.3V59.7M431.5 21.1V58.9M432.5 21.4V58.6M433.5 21.3V58.7M434.5 21.1V58.9M435.5 24.3V55.7M436.5 24.5V55.5M437.5 22.0V58.0M438.5 24.2V55.8M439.5 21.8V58.2M440.5 21.6V58.4M441.5 22.9V57.1M442.5 21.5V58.5M443.5 20.7V59.3M444.5 22.6V57.4M445.5 23.0V57.0M446.5 22.9V57.1M447.5 23.6V56.4M448.5 23.1V56.9M449.5 21.2V58.8M450.5 23.4V56.6M451.5 23.5V56.5M452.5 22.6V57.4M453.5 20.8V59.2M454.5 22.0V58.0M455.5 21.6V58.4M456.5 22.5V57.5M457.5 24.0V56.0M458.5 24.0V56.0M459.5 20.6V59.4M460.5 20.4V59.6M461.5 21.7V58.3M462.5 20.3V59.7M463.5 23.1V56.9M464.5 22.5V57.5M465.5 23.0V57.0M466.5 23.3V56.7M467.5 21.5V58.5M468.5 20.3V59.7M469.5 22.7V57.3M470.5 20.5V59.5M471.5 22.5V57.5M472.5 21.6V58.4M473.5 20.0V60.0M474.5 20.6V59.4M475.5 23.5V56.5M476.5 20.1V59.9M477.5 23.2V56.8M478.5 22.6V57.4M479.5 20.8V59.2M480.5 22.7V57.3M481.5 21.3V58.7M482.5 23.5V56.5M483.5 21.2V58.8M484.5 20.4V59.6M485.5 20.4V59.6M486.5 21.9V58.1M487.5 22.2V57.8M488.5 22.2V57.8M489.5 21.0V59.0M490.5 19.5V60.5M491.5 22.7V57.3M492.5 22.2V57.8M493.5 20.8V59.2M494.5 17.7V62.3M495.5 22.9V57.1M496.5 19.6V60.4M497.5 18.4V61.6M498.5 17.7V62.3M499.5 16.7V63.3M500.5 16.9V63.1M501.5 17.2V62.8M502.5 12.9V67.1M503.5 14.7V65.3M504.5 11.6V68.4M505.5 10.2V69.8M506.5 14.7V65.3M507.5 9.3V70.7M508.5 11.6V68.4M509.5 6.9V73.1M510.5 7.7V72.3M511.5 9.9V70.1M512.5 5.0V75.0M513.5 4.2V75.8M514.5 5.4V74.6M515.5 8.9V71.1M516.5 10.3V69.7M517.5 7.6V72.4M518.5 5.2V74.8M519.5 4.5V75.5M520.5 2.0V78.0M521.5 3.9V76.1M522.5 7.6V72.4M523.5 4.6V75.4M524.5 6.3V73.7M525.5 3.2V76.8M526.5 4.9V75.1M527.5 4.5V75.5M528.5 3.5V76.5M529.5 4.7V75.3M530.5 6.6V73.4M531.5 6.1V73.9M532.5 10.1V69.9M533.5 2.0V78.0M534.5 5.3V74.7M535.5 6.3V73.7M536.5 8.5V71.5M537.5 5.2V74.8M538.5 7.3V72.7M539.5 10.3V69.7M540.5 5.3V74.7M541.5 7.0V73.0M542.5 7.6V72.4M543.5 6.9V73.1M544.5 9.6V70.4M545.5 5.9V74.1M546.5 4.1V75.9M547.5 7.9V72.1M548.5 8.7V71.3M549.5 3.8V76.2M550.5 7.2V72.8M551.5 6.5V73.5M552.5 6.8V73.2M553.5 7.4V72.6M554.5 7.4V72.6M555.5 7.4V72.6M556.5 8.2V71.8M557.5 8.5V71.5M558.5 8.4V71.6M559.5 5.5V74.5M560.5 6.8V73.2M561.5 5.4V74.6M562.5 8.2V71.8M563.5 5.4V74.6M564.5 6.5V73.5M565.5 3.1V76.9M566.5 8.1V71.9M567.5 5.0V75.0M568.5 8.2V71.8M569.5 5.9V74.1M570.5 9.4V70.6M571.5 9.1V70.9M572.5 5.6V74.4M573.5 4.4V75.6M574.5 6.4V73.6M575.5 9.2V70.8M576.5 7.5V72.5M577.5 8.4V71.6M578.5 6.7V73.3M579.5 3.7V76.3M580.5 6.3V73.7M581.5 9.0V71.0M582.5 8.8V71.2M583.5 9.7V70.3M584.5 8.3V71.7M585.5 2.0V78.0M586.5 4.4V75.6M587.5 4.6V75.4M588.5 10.2V69.8M589.5 3.9V76.1M590.5 7.1V72.9M591.5 8.3V71.7M592.5 4.9V75.1M593.5 9.0V71.0M594.5 6.3V73.7M595.5 6.0V74.0M596.5 9.7V70.3M597.5 8.3V71.7M598.5 2.0V78.0M599.5 9.3V70.7M600.5 5.1V74.9M601.5 7.0V73.0M602.5 6.7V73.3M603.5 3.8V76.2M604.5 3.0V77.0M605.5 6.8V73.2M606.5 5.2V74.8M607.5 4.9V75.1M608.5 9.4V70.6M609.5 6.6V73.4M610.5 9.2V70.8M611.5 3.3V76.7M612.5 8.2V71.8M613.5 4.5V75.5M614.5 7.6V72.4M615.5 8.4V71.6M616.5 9.3V70.7M617.5 4.2V75.8M618.5 6.3V73.7M619.5 10.2V69.8M620.5 8.8V71.2M621.5 8.6V71.4M622.5 10.1V69.9M623.5 7.2V72.8M624.5 4.0V76.0M625.5 3.0V77.0M626.5 4.0V76.0M627.5 7.4V72.6M628.5 6.6V73.4M629.5 3.3V76.7M630.5 2.9V77.1M631.5 6.1V73.9M632.5 9.5V70.5M633.5 10.3V69.7M634.5 3.2V76.8M635.5 10.3V69.7M636.5 6.1V73.9M637.5 5.1V74.9M638.5 3.2V76.8M639.5 6.6V73.4M640.5 7.7V72.3M641.5 4.6V75.4M642.5 8.0V72.0M643.5 8.5V71.5M644.5 4.7V75.3M645.5 8.2V71.8M646.5 9.4V70.6M647.5 6.0V74.0M648.5 10.0V70.0M649.5 7.2V72.8M650.5 2.0V78.0M651.5 3.3V76.7M652.5 5.1V74.9M653.5 3.2V76.8M654.5 5.1V74.9M655.5 4.0V76.0M656.5 5.3V74.7M657.5 7.5V72.5M658.5 5.2V74.8M659.5 8.4V71.6M660.5 9.0V71.0M661.5 9.9V70.1M662.5 4.0V76.0M663.5 3.9V76.1M664.5 2.8V77.2M665.5 5.7V74.3M666.5 6.9V73.1M667.5 9.1V70.9M668.5 7.0V73.0M669.5 6.1V73.9M670.5 4.5V75.5M671.5 3.1V76.9M672.5 3.1V76.9M673.5 9.8V70.2M674.5 4.5V75.5M675.5 4.6V75.4M676.5 2.0V78.0M677.5 6.3V73.7M678.5 4.5V75.5M679.5 6.6V73.4M680.5 9.4V70.6M681.5 8.6V71.4M682.5 8.7V71.3M683.5 3.5V76.5M684.5 8.6V71.4M685.5 8.4V71.6M686.5 6.5V73.5M687.5 6.6V73.4M688.5 6.8V73.2M689.5 3.8V76.2M690.5 7.9V72.1M691.5 11.7V68.3M692.5 8.0V72.0M693.5 11.6V68.4M694.5 11.8V68.2M695.5 11.7V68.3M696.5 14.4V65.6M697.5 16.9V63.1M698.5 12.9V67.1M699.5 14.0V66.0M700.5 19.1V60.9M701.5 19.5V60.5M702.5 17.5V62.5M703.5 18.8V61.2M704.5 18.1V61.9M705.5 19.1V60.9M706.5 18.5V61.5M707.5 22.0V58.0M708.5 19.9V60.1M709.5 20.7V59.3M710.5 22.8V57.2M711.5 20.6V59.4M712.5 22.5V57.5M713.5 19.6V60.4M714.5 20.2V59.8M715.5 21.0V59.0M716.5 21.8V58.2M717.5 21.2V58.8M718.5 21.2V58.8M719.5 23.9V56.1M720.5 22.2V57.8M721.5 23.2V56.8M722.5 21.4V58.6M723.5 21.2V58.8M724.5 22.8V57.2M725.5 24.9V55.1M726.5 24.9V55.1M727.5 24.0V56.0M728.5 23.7V56.3M729.5 23.2V56.8M730.5 25.5V54.5M731.5 24.5V55.5M732.5 25.4V54.6M733.5 25.4V54.6M734.5 25.5V54.5M735.5 26.5V53.5M736.5 25.8V54.2M737.5 25.6V54.4M738.5 27.0V53.0M739.5 27.0V53.0M740.5 27.7V52.3M741.5 24.6V55.4M742.5 25.7V54.3M743.5 27.5V52.5M744.5 27.6V52.4M745.5 26.4V53.6M746.5 25.8V54.2M747.5 28.2V51.8M748.5 26.3V53.7M749.5 28.0V52.0M750.5 27.7V52.3M751.5 29.4V50.6M752.5 27.8V52.2M753.5 27.5V52.5M754.5 28.8V51.2M755.5 29.8V50.2M756.5 30.1V49.9M757.5 30.0V50.0M758.5 30.2V49.8M759.5 29.4V50.6M760.5 28.9V51.1M761.5 29.3V50.7M762.5 31.1V48.9M763.5 30.6V49.4M764.5 29.5V50.5M765.5 31.4V48.6M766.5 31.8V48.2M767.5 30.8V49.2M768.5 31.2V48.8M769.5 31.5V48.5M770.5 32.3V47.7M771.5 32.6V47.4M772.5 32.0V48.0M773.5 31.3V48.7M774.5 32.2V47.8M775.5 33.0V47.0M776.5 33.5V46.5M777.5 33.5V46.5M778.5 33.4V46.6M779.5 33.9V46.1M780.5 33.3V46.7M781.5 34.4V45.6M782.5 34.2V45.8M783.5 34.7V45.3M784.5 35.8V44.2M785.5 35.8V44.2M786.5 35.8V44.2M787.5 36.6V43.4M788.5 36.5V43.5M789.5 36.5V43.5M790.5 37.5V42.5M791.5 37.8V42.2M792.5 37.7V42.3M793.5 38.1V41.9M794.5 38.5V41.5M795.5 38.9V41.1M796.5 39.1V40.9M797.5 39.3V40.7M798.5 39.5V40.5M799.5 39.5V40.5"/>
+        </svg>
+        <div class="waveform-ticks num" aria-hidden="true"><span style="left:0.0%">0:00</span><span style="left:26.4%">1:00</span><span style="left:52.9%">2:00</span><span style="left:79.3%">3:00</span><span style="left:100%">3:47</span></div>
+      </figure>
+    </section>
+
+    <section>
+      <h4 class="section-label">Độ lớn & đỉnh</h4>
+      <div class="metrics">
+        <div class="metric"><span class="metric-label">Integrated</span><span class="metric-value num">-8.1<small>LUFS</small></span></div>
+        <div class="metric metric--warn"><span class="metric-label">True peak</span><span class="metric-value num">+0.3<small>dBTP</small></span><span class="metric-note"><svg class="icon" aria-hidden="true"><use href="#i-alert-triangle"/></svg>Vượt 0 dBTP</span></div>
+        <div class="metric"><span class="metric-label">LRA</span><span class="metric-value num">4.6<small>LU</small></span></div>
+      </div>
+    </section>
+
+    <section>
+      <h4 class="section-label">Gapless</h4>
+      <dl class="stats">
+        <div><dt>Bỏ đầu</dt><dd class="num">1 105 <small>mẫu</small></dd></div>
+        <div><dt>Bỏ cuối</dt><dd class="num">695 <small>mẫu</small></dd></div>
+        <div><dt>Tổng</dt><dd class="num">10 010 700 <small>mẫu</small></dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h4 class="section-label">Kỹ thuật</h4>
+      <dl class="kv">
+        <dt>Định dạng</dt><dd>MP3 · CBR <span class="num">320</span> kbps</dd>
+        <dt>Tần số mẫu</dt><dd class="num">44.1 kHz</dd>
+        <dt>Kênh</dt><dd>Stereo</dd>
+        <dt>Thời lượng</dt><dd class="num">3:47</dd>
+        <dt>Dung lượng</dt><dd class="num">8.8 MB</dd>
+        <dt>Track / Disc</dt><dd class="num">3 / 1</dd>
+        <dt>Nghệ sĩ album</dt><dd>Hà My</dd>
+        <dt>ID</dt><dd class="kv-id"><span class="mono truncate">9c41e07d5b2a8f13c6e0d94b7a215f08e3c6d1b29a4f7e05c8b3d26e1f9a0c7d</span><button class="btn btn--ghost btn--icon btn--xs" type="button" aria-label="Sao chép ID"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button></dd>
+        <dt>Tạo lúc</dt><dd class="num">21/11/2026 10:42</dd>
+        <dt>Cập nhật</dt><dd class="num">21/11/2026 10:58</dd>
+      </dl>
+    </section>
+  </div>
+</aside>
+    </div>
+  </div>
+</div>
+
+<h2 class="mk-caption">2 · Thư viện + Tải lên <span>drop zone + hàng đợi: hoàn tất, trùng lặp, lỗi, đang tải lên, đang phân tích, đang chờ</span></h2>
+<div class="mk-frame">
+  <div class="app">
+    <header class="topbar">
+  <div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wave"/></svg></span>HiResAudio Upload</div>
+  <nav class="nav" aria-label="Điều hướng chính">
+    <a class="nav-item" href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg>Thư viện <span class="count num">8</span></a>
+    <a class="nav-item" href="#" ><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Cài đặt</a>
+  </nav>
+  <div class="topbar-spacer"></div>
+  <span class="conn"><span class="conn-dot" aria-hidden="true"></span>Đã kết nối · <span class="mono">hires-library</span></span>
+  <button class="btn btn--primary" type="button" aria-expanded="true"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+</header>
+    <div class="main">
+      <section class="library" aria-label="Thư viện">
+        <div class="toolbar">
+  <h1 class="page-title">Thư viện</h1>
+  <span class="toolbar-meta num">8 bài · 64.4 MB</span>
+  <div class="topbar-spacer"></div>
+  <button class="btn btn--ghost btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Làm mới</button>
+</div>
+        <div class="table-wrap">
+  <table class="tracks">
+    <colgroup><col class="w-check"><col class="w-cover"><col><col class="w-album"><col class="w-dur"><col class="w-quality"><col class="w-lufs"><col class="w-size"></colgroup>
+    <thead><tr>
+      <th class="col-check"><input type="checkbox" aria-label="Chọn tất cả"></th>
+      <th><span class="sr-only">Ảnh bìa</span></th>
+      <th>Tiêu đề / Nghệ sĩ</th>
+      <th>Album</th>
+      <th class="col-num">Thời lượng</th>
+      <th>Chất lượng</th>
+      <th class="col-num" title="Integrated loudness">LUFS</th>
+      <th class="col-num col-last">Dung lượng</th>
+    </tr></thead>
+    <tbody>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Đêm Sài Gòn"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Phố Đêm" style="background:linear-gradient(135deg,hsl(330 62% 52%),hsl(18 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Đêm Sài Gòn</span><span class="cell-sub">Ngọc Lan Vy</span></td>
+      <td class="col-album">Phố Đêm</td>
+      <td class="col-num num">4:12</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-9.8</td>
+      <td class="col-num col-last num">9.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Mưa Trên Phố Huế"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cố Đô" style="background:linear-gradient(135deg,hsl(205 62% 52%),hsl(253 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Mưa Trên Phố Huế</span><span class="cell-sub">Trần Minh Khang</span></td>
+      <td class="col-album">Cố Đô</td>
+      <td class="col-num num">5:03</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 245 · High (~V0–V2)</span></td>
+      <td class="col-num num">-11.4</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Gió Lộng Tây Nguyên"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Gió Lộng Tây Nguyên</span><span class="cell-sub">Hà My & Đồi Thông</span></td>
+      <td class="col-album">Cao Nguyên</td>
+      <td class="col-num num">3:47</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span></td>
+      <td class="col-num num">-8.1</td>
+      <td class="col-num col-last num">8.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Bên Kia Sông"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Mùa Nước Nổi" style="background:linear-gradient(135deg,hsl(160 62% 52%),hsl(208 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Bên Kia Sông</span><span class="cell-sub">Lê Quang Huy</span></td>
+      <td class="col-album">Mùa Nước Nổi</td>
+      <td class="col-num num">4:31</td>
+      <td class="col-quality"><span class="qbadge qbadge--low"><span class="qmeter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>MP3 128 · Nguồn kém</span></td>
+      <td class="col-num num">-12.6</td>
+      <td class="col-num col-last num">4.3 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Thu Cạn"></td>
+      <td class="col-cover"><span class="cover cover--empty" role="img" aria-label="Không có ảnh bìa"><svg class="icon" aria-hidden="true"><use href="#i-music"/></svg></span></td>
+      <td class="col-title"><span class="cell-main">Thu Cạn</span><span class="cell-sub">Phạm Thu Trang</span></td>
+      <td class="col-album">Lá Vàng</td>
+      <td class="col-num num">3:58</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-10.2</td>
+      <td class="col-num col-last num">9.1 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Phố Cũ Mùa Đông"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Một Thời Để Nhớ" style="background:linear-gradient(135deg,hsl(250 62% 52%),hsl(298 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Phố Cũ Mùa Đông</span><span class="cell-sub">Đoàn Bảo Nam</span></td>
+      <td class="col-album">Một Thời Để Nhớ</td>
+      <td class="col-num num">6:30</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 190 · High (~V0–V2)</span></td>
+      <td class="col-num num">-13.1</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Ru Con Miền Tây"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ca Dao Mẹ" style="background:linear-gradient(135deg,hsl(95 62% 52%),hsl(143 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Ru Con Miền Tây</span><span class="cell-sub">Nguyễn Kim Ngân</span></td>
+      <td class="col-album">Ca Dao Mẹ</td>
+      <td class="col-num num">2:54</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 160 · Medium</span></td>
+      <td class="col-num num">-14.7</td>
+      <td class="col-num col-last num">3.5 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Nắng Ấm Xa Dần"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ngày Xưa Ơi" style="background:linear-gradient(135deg,hsl(45 62% 52%),hsl(93 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Nắng Ấm Xa Dần</span><span class="cell-sub">Vũ Đăng Khoa</span></td>
+      <td class="col-album">Ngày Xưa Ơi</td>
+      <td class="col-num num">4:45</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-7.9</td>
+      <td class="col-num col-last num">11.0 MB</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+      </section>
+      <aside class="inspector" aria-label="Tải lên">
+  <div class="inspector-head">
+    <h2 class="inspector-title">Tải lên</h2>
+    <button class="btn btn--ghost btn--icon" type="button" aria-label="Đóng bảng tải lên"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="inspector-body">
+    <div class="dropzone dropzone--compact">
+      <span class="dropzone-icon"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg></span>
+      <div class="dropzone-text">
+        <p class="dropzone-title">Kéo thả thêm file MP3</p>
+        <p class="dropzone-hint">Tối đa 200 MB · dài 1 giây đến 2 giờ</p>
+      </div>
+      <button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-file-audio"/></svg>Chọn file…</button>
+    </div>
+    <section>
+      <div class="section-row">
+        <h4 class="section-label">Hàng đợi</h4>
+        <button class="btn btn--ghost btn--xs" type="button">Xoá mục đã xong</button>
+      </div>
+      <p class="queue-summary num" role="status">8 file · 2 xong · 1 trùng · 2 lỗi · 3 đang xử lý</p>
+      <ul class="queue">
+        <li class="qitem qitem--done">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg></span>
+    <span class="qitem-name" title="nang-am-xa-dan.mp3">nang-am-xa-dan.mp3</span>
+    <span class="stage stage--done">Hoàn tất</span>
+    <span class="qitem-meta"><span class="qbadge qbadge--full qbadge--sm"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span><a class="link" href="#">Xem</a></span>
+    
+  </li>
+<li class="qitem qitem--done">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg></span>
+    <span class="qitem-name" title="pho-cu-mua-dong_v2.mp3">pho-cu-mua-dong_v2.mp3</span>
+    <span class="stage stage--done">Hoàn tất</span>
+    <span class="qitem-meta"><span class="qbadge qbadge--high qbadge--sm"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 190 · High (~V0–V2)</span><a class="link" href="#">Xem</a></span>
+    
+  </li>
+<li class="qitem qitem--duplicate">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></span>
+    <span class="qitem-name" title="Dem Sai Gon (master).mp3">Dem Sai Gon (master).mp3</span>
+    <span class="stage stage--duplicate">Trùng lặp</span>
+    <span class="qitem-meta"><span>Đã có trong thư viện: <a class="link" href="#">Đêm Sài Gòn</a></span></span>
+    
+  </li>
+<li class="qitem qitem--error">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert-circle"/></svg></span>
+    <span class="qitem-name" title="intro-loop.mp3">intro-loop.mp3</span>
+    <span class="stage stage--error">Lỗi · <span class="mono">INVALID_FORMAT</span></span>
+    <span class="qitem-meta"><span class="qitem-error">Nội dung không phải MP3 hợp lệ.</span></span>
+    
+  </li>
+<li class="qitem qitem--error">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert-circle"/></svg></span>
+    <span class="qitem-name" title="jingle-ngan.mp3">jingle-ngan.mp3</span>
+    <span class="stage stage--error">Lỗi · <span class="mono">TOO_SHORT</span></span>
+    <span class="qitem-meta"><span class="qitem-error">File ngắn hơn 1 giây.</span></span>
+    
+  </li>
+<li class="qitem qitem--uploading">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg></span>
+    <span class="qitem-name" title="gio-long-tay-nguyen.mp3">gio-long-tay-nguyen.mp3</span>
+    <span class="stage stage--uploading">Đang tải lên · <span class="num">64%</span></span>
+    <span class="qitem-meta"><span class="num">8.8 MB</span></span>
+    <div class="progress" role="progressbar" aria-label="Tiến độ tải lên" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100"><span style="width:64%"></span></div>
+  </li>
+<li class="qitem qitem--analysing">
+    <span class="qitem-icon"><svg class="icon spin" aria-hidden="true"><use href="#i-loader"/></svg></span>
+    <span class="qitem-name" title="ru-con-mien-tay.mp3">ru-con-mien-tay.mp3</span>
+    <span class="stage stage--analysing">Đang phân tích</span>
+    <span class="qitem-meta"><span class="num">3.4 MB</span></span>
+    <div class="progress progress--indeterminate" role="progressbar" aria-label="Đang phân tích"><span></span></div>
+  </li>
+<li class="qitem qitem--queued">
+    <span class="qitem-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span>
+    <span class="qitem-name" title="ben-kia-song.mp3">ben-kia-song.mp3</span>
+    <span class="stage stage--queued">Đang chờ</span>
+    <span class="qitem-meta"><span class="num">4.3 MB</span></span>
+    
+  </li>
+      </ul>
+    </section>
+  </div>
+</aside>
+    </div>
+  </div>
+</div>
+
+<h2 class="mk-caption">3 · Sửa thông tin <span>dialog modal trên thư viện · ô Nghệ sĩ đang focus</span></h2>
+<div class="mk-frame">
+  <div class="app">
+    <header class="topbar">
+  <div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wave"/></svg></span>HiResAudio Upload</div>
+  <nav class="nav" aria-label="Điều hướng chính">
+    <a class="nav-item" href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg>Thư viện <span class="count num">8</span></a>
+    <a class="nav-item" href="#" ><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Cài đặt</a>
+  </nav>
+  <div class="topbar-spacer"></div>
+  <span class="conn"><span class="conn-dot" aria-hidden="true"></span>Đã kết nối · <span class="mono">hires-library</span></span>
+  <button class="btn btn--primary" type="button" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+</header>
+    <div class="main">
+      <section class="library" aria-label="Thư viện">
+        <div class="toolbar">
+  <h1 class="page-title">Thư viện</h1>
+  <span class="toolbar-meta num">8 bài · 64.4 MB</span>
+  <div class="topbar-spacer"></div>
+  <button class="btn btn--ghost btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Làm mới</button>
+</div>
+        <div class="table-wrap">
+  <table class="tracks">
+    <colgroup><col class="w-check"><col class="w-cover"><col><col class="w-album"><col class="w-dur"><col class="w-quality"><col class="w-lufs"><col class="w-size"></colgroup>
+    <thead><tr>
+      <th class="col-check"><input type="checkbox" aria-label="Chọn tất cả"></th>
+      <th><span class="sr-only">Ảnh bìa</span></th>
+      <th>Tiêu đề / Nghệ sĩ</th>
+      <th>Album</th>
+      <th class="col-num">Thời lượng</th>
+      <th>Chất lượng</th>
+      <th class="col-num" title="Integrated loudness">LUFS</th>
+      <th class="col-num col-last">Dung lượng</th>
+    </tr></thead>
+    <tbody>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Đêm Sài Gòn"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Phố Đêm" style="background:linear-gradient(135deg,hsl(330 62% 52%),hsl(18 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Đêm Sài Gòn</span><span class="cell-sub">Ngọc Lan Vy</span></td>
+      <td class="col-album">Phố Đêm</td>
+      <td class="col-num num">4:12</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-9.8</td>
+      <td class="col-num col-last num">9.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Mưa Trên Phố Huế"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cố Đô" style="background:linear-gradient(135deg,hsl(205 62% 52%),hsl(253 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Mưa Trên Phố Huế</span><span class="cell-sub">Trần Minh Khang</span></td>
+      <td class="col-album">Cố Đô</td>
+      <td class="col-num num">5:03</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 245 · High (~V0–V2)</span></td>
+      <td class="col-num num">-11.4</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr class="is-active" aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Gió Lộng Tây Nguyên"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Gió Lộng Tây Nguyên</span><span class="cell-sub">Hà My & Đồi Thông</span></td>
+      <td class="col-album">Cao Nguyên</td>
+      <td class="col-num num">3:47</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span></td>
+      <td class="col-num num">-8.1</td>
+      <td class="col-num col-last num">8.8 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Bên Kia Sông"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Mùa Nước Nổi" style="background:linear-gradient(135deg,hsl(160 62% 52%),hsl(208 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Bên Kia Sông</span><span class="cell-sub">Lê Quang Huy</span></td>
+      <td class="col-album">Mùa Nước Nổi</td>
+      <td class="col-num num">4:31</td>
+      <td class="col-quality"><span class="qbadge qbadge--low"><span class="qmeter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>MP3 128 · Nguồn kém</span></td>
+      <td class="col-num num">-12.6</td>
+      <td class="col-num col-last num">4.3 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Thu Cạn"></td>
+      <td class="col-cover"><span class="cover cover--empty" role="img" aria-label="Không có ảnh bìa"><svg class="icon" aria-hidden="true"><use href="#i-music"/></svg></span></td>
+      <td class="col-title"><span class="cell-main">Thu Cạn</span><span class="cell-sub">Phạm Thu Trang</span></td>
+      <td class="col-album">Lá Vàng</td>
+      <td class="col-num num">3:58</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-10.2</td>
+      <td class="col-num col-last num">9.1 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Phố Cũ Mùa Đông"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Một Thời Để Nhớ" style="background:linear-gradient(135deg,hsl(250 62% 52%),hsl(298 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Phố Cũ Mùa Đông</span><span class="cell-sub">Đoàn Bảo Nam</span></td>
+      <td class="col-album">Một Thời Để Nhớ</td>
+      <td class="col-num num">6:30</td>
+      <td class="col-quality"><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 190 · High (~V0–V2)</span></td>
+      <td class="col-num num">-13.1</td>
+      <td class="col-num col-last num">9.0 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Ru Con Miền Tây"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ca Dao Mẹ" style="background:linear-gradient(135deg,hsl(95 62% 52%),hsl(143 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Ru Con Miền Tây</span><span class="cell-sub">Nguyễn Kim Ngân</span></td>
+      <td class="col-album">Ca Dao Mẹ</td>
+      <td class="col-num num">2:54</td>
+      <td class="col-quality"><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 160 · Medium</span></td>
+      <td class="col-num num">-14.7</td>
+      <td class="col-num col-last num">3.5 MB</td>
+    </tr>
+<tr aria-selected="false">
+      <td class="col-check"><input type="checkbox" aria-label="Chọn Nắng Ấm Xa Dần"></td>
+      <td class="col-cover"><span class="cover" role="img" aria-label="Ảnh bìa Ngày Xưa Ơi" style="background:linear-gradient(135deg,hsl(45 62% 52%),hsl(93 70% 24%))"></span></td>
+      <td class="col-title"><span class="cell-main">Nắng Ấm Xa Dần</span><span class="cell-sub">Vũ Đăng Khoa</span></td>
+      <td class="col-album">Ngày Xưa Ơi</td>
+      <td class="col-num num">4:45</td>
+      <td class="col-quality"><span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span></td>
+      <td class="col-num num">-7.9</td>
+      <td class="col-num col-last num">11.0 MB</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+      </section>
+      <aside class="inspector" aria-label="Chi tiết bài hát">
+  <div class="inspector-head">
+    <h2 class="inspector-title">Chi tiết</h2>
+    <button class="btn btn--ghost btn--icon" type="button" aria-label="Đóng chi tiết"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="inspector-body">
+    <div class="detail-hero">
+      <span class="cover cover--detail" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span>
+      <div class="detail-id">
+        <h3 class="detail-title">Gió Lộng Tây Nguyên</h3>
+        <p class="detail-sub">Hà My & Đồi Thông</p>
+        <p class="detail-sub">Cao Nguyên · 2024 · Dân gian đương đại</p>
+        <div class="detail-actions">
+          <button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pencil"/></svg>Sửa</button>
+          <button class="btn btn--danger-ghost btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá</button>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-row"><h4 class="section-label">Chất lượng</h4><span class="qbadge qbadge--medium qbadge--lg"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span></div>
+      <div class="bandwidth" role="img" aria-label="Băng thông thực 17.1 kHz, mức medium">
+        <div class="bandwidth-head"><span class="bandwidth-label">Băng thông thực</span><span class="bandwidth-value num">17.15 kHz</span></div>
+        <div class="bw-track">
+          <span class="bw-zone bw-zone--low" style="width:45.6%"></span><span class="bw-zone bw-zone--medium" style="width:20.8%"></span><span class="bw-zone bw-zone--high" style="width:12.4%"></span><span class="bw-zone bw-zone--full" style="flex:1"></span>
+          <span class="bw-fill" style="width:59.3%;background:var(--color-quality-medium)"></span>
+          <span class="bw-needle" style="left:59.3%"></span>
+        </div>
+        <div class="bw-scale num" aria-hidden="true"><span style="left:0">10k</span><span style="left:45.6%">15.5k</span><span style="left:66.4%">18k</span><span style="left:78.8%">19.5k</span><span style="left:100%">22.05k</span></div>
+      </div>
+      <p class="hint"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>File ghi 320 kbps nhưng nội dung dừng ở ~17 kHz: nhiều khả năng là bản 128 kbps được encode lại.</span></p>
+    </section>
+
+    <section>
+      <h4 class="section-label">Waveform</h4>
+      <figure class="waveform">
+        <svg viewBox="0 0 800 80" preserveAspectRatio="none" role="img" aria-label="Waveform của Gió Lộng Tây Nguyên">
+          <line class="waveform-base" x1="0" y1="40" x2="800" y2="40"/>
+          <path class="waveform-bars" d="M0.5 39.5V40.5M1.5 39.4V40.6M2.5 38.6V41.4M3.5 37.8V42.2M4.5 37.5V42.5M5.5 36.7V43.3M6.5 36.3V43.7M7.5 35.2V44.8M8.5 34.6V45.4M9.5 33.8V46.2M10.5 33.1V46.9M11.5 32.8V47.2M12.5 31.1V48.9M13.5 30.6V49.4M14.5 31.3V48.7M15.5 30.3V49.7M16.5 29.6V50.4M17.5 28.2V51.8M18.5 29.8V50.2M19.5 28.6V51.4M20.5 27.8V52.2M21.5 28.3V51.7M22.5 28.1V51.9M23.5 27.9V52.1M24.5 27.9V52.1M25.5 28.8V51.2M26.5 28.4V51.6M27.5 29.2V50.8M28.5 27.5V52.5M29.5 28.3V51.7M30.5 27.8V52.2M31.5 28.0V52.0M32.5 28.7V51.3M33.5 29.5V50.5M34.5 28.0V52.0M35.5 29.7V50.3M36.5 28.9V51.1M37.5 27.7V52.3M38.5 27.3V52.7M39.5 26.6V53.4M40.5 29.5V50.5M41.5 28.7V51.3M42.5 29.0V51.0M43.5 28.0V52.0M44.5 29.5V50.5M45.5 27.1V52.9M46.5 28.6V51.4M47.5 29.2V50.8M48.5 28.0V52.0M49.5 27.8V52.2M50.5 27.9V52.1M51.5 29.0V51.0M52.5 26.2V53.8M53.5 28.1V51.9M54.5 29.0V51.0M55.5 28.1V51.9M56.5 26.7V53.3M57.5 28.7V51.3M58.5 28.9V51.1M59.5 26.7V53.3M60.5 27.0V53.0M61.5 26.6V53.4M62.5 28.7V51.3M63.5 28.0V52.0M64.5 28.8V51.2M65.5 26.5V53.5M66.5 26.6V53.4M67.5 28.7V51.3M68.5 28.5V51.5M69.5 28.5V51.5M70.5 26.5V53.5M71.5 27.7V52.3M72.5 26.7V53.3M73.5 28.8V51.2M74.5 28.5V51.5M75.5 28.3V51.7M76.5 27.8V52.2M77.5 28.6V51.4M78.5 26.8V53.2M79.5 27.7V52.3M80.5 27.5V52.5M81.5 27.8V52.2M82.5 27.0V53.0M83.5 28.7V51.3M84.5 28.4V51.6M85.5 26.9V53.1M86.5 26.5V53.5M87.5 26.1V53.9M88.5 27.3V52.7M89.5 27.9V52.1M90.5 27.5V52.5M91.5 25.5V54.5M92.5 26.8V53.2M93.5 25.9V54.1M94.5 26.4V53.6M95.5 26.2V53.8M96.5 27.7V52.3M97.5 26.7V53.3M98.5 26.7V53.3M99.5 24.4V55.6M100.5 23.9V56.1M101.5 24.9V55.1M102.5 24.6V55.4M103.5 22.5V57.5M104.5 21.2V58.8M105.5 21.0V59.0M106.5 21.8V58.2M107.5 21.4V58.6M108.5 22.5V57.5M109.5 19.9V60.1M110.5 21.7V58.3M111.5 19.8V60.2M112.5 21.1V58.9M113.5 21.0V59.0M114.5 18.9V61.1M115.5 16.8V63.2M116.5 18.7V61.3M117.5 14.9V65.1M118.5 20.2V59.8M119.5 18.4V61.6M120.5 17.8V62.2M121.5 19.8V60.2M122.5 18.2V61.8M123.5 20.5V59.5M124.5 18.1V61.9M125.5 19.7V60.3M126.5 20.5V59.5M127.5 19.1V60.9M128.5 18.9V61.1M129.5 17.7V62.3M130.5 18.8V61.2M131.5 19.2V60.8M132.5 17.3V62.7M133.5 21.0V59.0M134.5 18.1V61.9M135.5 16.5V63.5M136.5 20.4V59.6M137.5 17.3V62.7M138.5 19.9V60.1M139.5 17.2V62.8M140.5 17.1V62.9M141.5 20.3V59.7M142.5 16.2V63.8M143.5 17.6V62.4M144.5 19.0V61.0M145.5 17.4V62.6M146.5 20.1V59.9M147.5 16.5V63.5M148.5 18.0V62.0M149.5 19.9V60.1M150.5 20.8V59.2M151.5 19.7V60.3M152.5 18.3V61.7M153.5 19.0V61.0M154.5 18.8V61.2M155.5 18.0V62.0M156.5 14.7V65.3M157.5 17.0V63.0M158.5 19.3V60.7M159.5 19.2V60.8M160.5 17.0V63.0M161.5 18.0V62.0M162.5 18.3V61.7M163.5 17.4V62.6M164.5 16.8V63.2M165.5 16.6V63.4M166.5 19.6V60.4M167.5 20.8V59.2M168.5 16.6V63.4M169.5 17.0V63.0M170.5 18.1V61.9M171.5 17.9V62.1M172.5 18.5V61.5M173.5 20.6V59.4M174.5 19.8V60.2M175.5 16.6V63.4M176.5 16.9V63.1M177.5 20.2V59.8M178.5 19.7V60.3M179.5 16.5V63.5M180.5 16.0V64.0M181.5 17.2V62.8M182.5 15.8V64.2M183.5 19.8V60.2M184.5 18.4V61.6M185.5 20.3V59.7M186.5 17.1V62.9M187.5 17.7V62.3M188.5 20.1V59.9M189.5 19.9V60.1M190.5 15.8V64.2M191.5 17.3V62.7M192.5 20.3V59.7M193.5 18.3V61.7M194.5 19.2V60.8M195.5 14.8V65.2M196.5 15.8V64.2M197.5 19.2V60.8M198.5 17.8V62.2M199.5 18.0V62.0M200.5 20.1V59.9M201.5 18.3V61.7M202.5 19.0V61.0M203.5 19.8V60.2M204.5 17.7V62.3M205.5 19.6V60.4M206.5 16.5V63.5M207.5 19.8V60.2M208.5 15.7V64.3M209.5 19.7V60.3M210.5 18.4V61.6M211.5 19.4V60.6M212.5 19.1V60.9M213.5 19.9V60.1M214.5 18.1V61.9M215.5 18.1V61.9M216.5 16.1V63.9M217.5 20.3V59.7M218.5 18.8V61.2M219.5 17.4V62.6M220.5 17.4V62.6M221.5 16.8V63.2M222.5 17.7V62.3M223.5 19.9V60.1M224.5 18.1V61.9M225.5 17.1V62.9M226.5 17.5V62.5M227.5 17.1V62.9M228.5 17.5V62.5M229.5 16.7V63.3M230.5 15.7V64.3M231.5 18.6V61.4M232.5 16.5V63.5M233.5 20.1V59.9M234.5 17.5V62.5M235.5 17.5V62.5M236.5 17.5V62.5M237.5 15.6V64.4M238.5 18.0V62.0M239.5 16.0V64.0M240.5 15.9V64.1M241.5 16.9V63.1M242.5 16.9V63.1M243.5 15.6V64.4M244.5 19.7V60.3M245.5 16.0V64.0M246.5 16.3V63.7M247.5 18.1V61.9M248.5 16.7V63.3M249.5 16.2V63.8M250.5 19.0V61.0M251.5 17.9V62.1M252.5 18.1V61.9M253.5 18.4V61.6M254.5 17.0V63.0M255.5 15.5V64.5M256.5 18.8V61.2M257.5 18.6V61.4M258.5 16.7V63.3M259.5 19.1V60.9M260.5 16.8V63.2M261.5 18.3V61.7M262.5 18.0V62.0M263.5 16.7V63.3M264.5 15.7V64.3M265.5 17.7V62.3M266.5 17.4V62.6M267.5 16.5V63.5M268.5 15.1V64.9M269.5 16.5V63.5M270.5 18.7V61.3M271.5 19.5V60.5M272.5 15.5V64.5M273.5 15.5V64.5M274.5 18.8V61.2M275.5 19.5V60.5M276.5 19.7V60.3M277.5 18.5V61.5M278.5 16.3V63.7M279.5 19.3V60.7M280.5 16.1V63.9M281.5 15.4V64.6M282.5 16.4V63.6M283.5 15.8V64.2M284.5 19.1V60.9M285.5 16.4V63.6M286.5 16.4V63.6M287.5 19.7V60.3M288.5 18.3V61.7M289.5 18.3V61.7M290.5 14.7V65.3M291.5 13.1V66.9M292.5 15.5V64.5M293.5 12.1V67.9M294.5 14.6V65.4M295.5 15.4V64.6M296.5 11.4V68.6M297.5 9.8V70.2M298.5 13.1V66.9M299.5 5.1V74.9M300.5 12.3V67.7M301.5 9.6V70.4M302.5 6.9V73.1M303.5 8.8V71.2M304.5 10.4V69.6M305.5 6.0V74.0M306.5 10.1V69.9M307.5 7.1V72.9M308.5 6.9V73.1M309.5 6.7V73.3M310.5 11.7V68.3M311.5 5.3V74.7M312.5 3.3V76.7M313.5 10.8V69.2M314.5 10.2V69.8M315.5 5.9V74.1M316.5 8.6V71.4M317.5 10.2V69.8M318.5 7.0V73.0M319.5 9.7V70.3M320.5 10.7V69.3M321.5 10.9V69.1M322.5 8.3V71.7M323.5 5.0V75.0M324.5 9.9V70.1M325.5 6.2V73.8M326.5 8.0V72.0M327.5 10.2V69.8M328.5 9.3V70.7M329.5 5.0V75.0M330.5 4.6V75.4M331.5 10.0V70.0M332.5 10.0V70.0M333.5 6.0V74.0M334.5 5.9V74.1M335.5 10.3V69.7M336.5 5.5V74.5M337.5 7.2V72.8M338.5 2.8V77.2M339.5 6.8V73.2M340.5 9.0V71.0M341.5 10.8V69.2M342.5 7.3V72.7M343.5 11.1V68.9M344.5 11.4V68.6M345.5 5.1V74.9M346.5 6.5V73.5M347.5 7.3V72.7M348.5 5.8V74.2M349.5 5.4V74.6M350.5 9.4V70.6M351.5 2.6V77.4M352.5 10.1V69.9M353.5 4.9V75.1M354.5 9.6V70.4M355.5 10.5V69.5M356.5 9.1V70.9M357.5 6.9V73.1M358.5 10.0V70.0M359.5 10.1V69.9M360.5 8.2V71.8M361.5 8.4V71.6M362.5 6.2V73.8M363.5 9.6V70.4M364.5 2.6V77.4M365.5 5.1V74.9M366.5 4.5V75.5M367.5 10.3V69.7M368.5 7.5V72.5M369.5 8.5V71.5M370.5 7.4V72.6M371.5 8.7V71.3M372.5 10.7V69.3M373.5 8.4V71.6M374.5 7.8V72.2M375.5 6.1V73.9M376.5 6.8V73.2M377.5 4.2V75.8M378.5 5.5V74.5M379.5 11.2V68.8M380.5 5.3V74.7M381.5 8.2V71.8M382.5 6.8V73.2M383.5 6.9V73.1M384.5 10.8V69.2M385.5 8.1V71.9M386.5 4.9V75.1M387.5 11.3V68.7M388.5 6.4V73.6M389.5 9.2V70.8M390.5 5.3V74.7M391.5 10.6V69.4M392.5 10.7V69.3M393.5 5.1V74.9M394.5 4.8V75.2M395.5 6.0V74.0M396.5 4.4V75.6M397.5 11.1V68.9M398.5 8.7V71.3M399.5 9.1V70.9M400.5 10.7V69.3M401.5 4.2V75.8M402.5 9.5V70.5M403.5 7.9V72.1M404.5 9.1V70.9M405.5 5.2V74.8M406.5 5.5V74.5M407.5 10.5V69.5M408.5 4.3V75.7M409.5 10.2V69.8M410.5 4.0V76.0M411.5 9.7V70.3M412.5 7.2V72.8M413.5 8.8V71.2M414.5 8.2V71.8M415.5 7.5V72.5M416.5 3.9V76.1M417.5 8.2V71.8M418.5 11.3V68.7M419.5 13.6V66.4M420.5 14.9V65.1M421.5 14.8V65.2M422.5 12.7V67.3M423.5 13.1V66.9M424.5 15.5V64.5M425.5 15.1V64.9M426.5 15.2V64.8M427.5 17.5V62.5M428.5 20.1V59.9M429.5 17.6V62.4M430.5 20.3V59.7M431.5 21.1V58.9M432.5 21.4V58.6M433.5 21.3V58.7M434.5 21.1V58.9M435.5 24.3V55.7M436.5 24.5V55.5M437.5 22.0V58.0M438.5 24.2V55.8M439.5 21.8V58.2M440.5 21.6V58.4M441.5 22.9V57.1M442.5 21.5V58.5M443.5 20.7V59.3M444.5 22.6V57.4M445.5 23.0V57.0M446.5 22.9V57.1M447.5 23.6V56.4M448.5 23.1V56.9M449.5 21.2V58.8M450.5 23.4V56.6M451.5 23.5V56.5M452.5 22.6V57.4M453.5 20.8V59.2M454.5 22.0V58.0M455.5 21.6V58.4M456.5 22.5V57.5M457.5 24.0V56.0M458.5 24.0V56.0M459.5 20.6V59.4M460.5 20.4V59.6M461.5 21.7V58.3M462.5 20.3V59.7M463.5 23.1V56.9M464.5 22.5V57.5M465.5 23.0V57.0M466.5 23.3V56.7M467.5 21.5V58.5M468.5 20.3V59.7M469.5 22.7V57.3M470.5 20.5V59.5M471.5 22.5V57.5M472.5 21.6V58.4M473.5 20.0V60.0M474.5 20.6V59.4M475.5 23.5V56.5M476.5 20.1V59.9M477.5 23.2V56.8M478.5 22.6V57.4M479.5 20.8V59.2M480.5 22.7V57.3M481.5 21.3V58.7M482.5 23.5V56.5M483.5 21.2V58.8M484.5 20.4V59.6M485.5 20.4V59.6M486.5 21.9V58.1M487.5 22.2V57.8M488.5 22.2V57.8M489.5 21.0V59.0M490.5 19.5V60.5M491.5 22.7V57.3M492.5 22.2V57.8M493.5 20.8V59.2M494.5 17.7V62.3M495.5 22.9V57.1M496.5 19.6V60.4M497.5 18.4V61.6M498.5 17.7V62.3M499.5 16.7V63.3M500.5 16.9V63.1M501.5 17.2V62.8M502.5 12.9V67.1M503.5 14.7V65.3M504.5 11.6V68.4M505.5 10.2V69.8M506.5 14.7V65.3M507.5 9.3V70.7M508.5 11.6V68.4M509.5 6.9V73.1M510.5 7.7V72.3M511.5 9.9V70.1M512.5 5.0V75.0M513.5 4.2V75.8M514.5 5.4V74.6M515.5 8.9V71.1M516.5 10.3V69.7M517.5 7.6V72.4M518.5 5.2V74.8M519.5 4.5V75.5M520.5 2.0V78.0M521.5 3.9V76.1M522.5 7.6V72.4M523.5 4.6V75.4M524.5 6.3V73.7M525.5 3.2V76.8M526.5 4.9V75.1M527.5 4.5V75.5M528.5 3.5V76.5M529.5 4.7V75.3M530.5 6.6V73.4M531.5 6.1V73.9M532.5 10.1V69.9M533.5 2.0V78.0M534.5 5.3V74.7M535.5 6.3V73.7M536.5 8.5V71.5M537.5 5.2V74.8M538.5 7.3V72.7M539.5 10.3V69.7M540.5 5.3V74.7M541.5 7.0V73.0M542.5 7.6V72.4M543.5 6.9V73.1M544.5 9.6V70.4M545.5 5.9V74.1M546.5 4.1V75.9M547.5 7.9V72.1M548.5 8.7V71.3M549.5 3.8V76.2M550.5 7.2V72.8M551.5 6.5V73.5M552.5 6.8V73.2M553.5 7.4V72.6M554.5 7.4V72.6M555.5 7.4V72.6M556.5 8.2V71.8M557.5 8.5V71.5M558.5 8.4V71.6M559.5 5.5V74.5M560.5 6.8V73.2M561.5 5.4V74.6M562.5 8.2V71.8M563.5 5.4V74.6M564.5 6.5V73.5M565.5 3.1V76.9M566.5 8.1V71.9M567.5 5.0V75.0M568.5 8.2V71.8M569.5 5.9V74.1M570.5 9.4V70.6M571.5 9.1V70.9M572.5 5.6V74.4M573.5 4.4V75.6M574.5 6.4V73.6M575.5 9.2V70.8M576.5 7.5V72.5M577.5 8.4V71.6M578.5 6.7V73.3M579.5 3.7V76.3M580.5 6.3V73.7M581.5 9.0V71.0M582.5 8.8V71.2M583.5 9.7V70.3M584.5 8.3V71.7M585.5 2.0V78.0M586.5 4.4V75.6M587.5 4.6V75.4M588.5 10.2V69.8M589.5 3.9V76.1M590.5 7.1V72.9M591.5 8.3V71.7M592.5 4.9V75.1M593.5 9.0V71.0M594.5 6.3V73.7M595.5 6.0V74.0M596.5 9.7V70.3M597.5 8.3V71.7M598.5 2.0V78.0M599.5 9.3V70.7M600.5 5.1V74.9M601.5 7.0V73.0M602.5 6.7V73.3M603.5 3.8V76.2M604.5 3.0V77.0M605.5 6.8V73.2M606.5 5.2V74.8M607.5 4.9V75.1M608.5 9.4V70.6M609.5 6.6V73.4M610.5 9.2V70.8M611.5 3.3V76.7M612.5 8.2V71.8M613.5 4.5V75.5M614.5 7.6V72.4M615.5 8.4V71.6M616.5 9.3V70.7M617.5 4.2V75.8M618.5 6.3V73.7M619.5 10.2V69.8M620.5 8.8V71.2M621.5 8.6V71.4M622.5 10.1V69.9M623.5 7.2V72.8M624.5 4.0V76.0M625.5 3.0V77.0M626.5 4.0V76.0M627.5 7.4V72.6M628.5 6.6V73.4M629.5 3.3V76.7M630.5 2.9V77.1M631.5 6.1V73.9M632.5 9.5V70.5M633.5 10.3V69.7M634.5 3.2V76.8M635.5 10.3V69.7M636.5 6.1V73.9M637.5 5.1V74.9M638.5 3.2V76.8M639.5 6.6V73.4M640.5 7.7V72.3M641.5 4.6V75.4M642.5 8.0V72.0M643.5 8.5V71.5M644.5 4.7V75.3M645.5 8.2V71.8M646.5 9.4V70.6M647.5 6.0V74.0M648.5 10.0V70.0M649.5 7.2V72.8M650.5 2.0V78.0M651.5 3.3V76.7M652.5 5.1V74.9M653.5 3.2V76.8M654.5 5.1V74.9M655.5 4.0V76.0M656.5 5.3V74.7M657.5 7.5V72.5M658.5 5.2V74.8M659.5 8.4V71.6M660.5 9.0V71.0M661.5 9.9V70.1M662.5 4.0V76.0M663.5 3.9V76.1M664.5 2.8V77.2M665.5 5.7V74.3M666.5 6.9V73.1M667.5 9.1V70.9M668.5 7.0V73.0M669.5 6.1V73.9M670.5 4.5V75.5M671.5 3.1V76.9M672.5 3.1V76.9M673.5 9.8V70.2M674.5 4.5V75.5M675.5 4.6V75.4M676.5 2.0V78.0M677.5 6.3V73.7M678.5 4.5V75.5M679.5 6.6V73.4M680.5 9.4V70.6M681.5 8.6V71.4M682.5 8.7V71.3M683.5 3.5V76.5M684.5 8.6V71.4M685.5 8.4V71.6M686.5 6.5V73.5M687.5 6.6V73.4M688.5 6.8V73.2M689.5 3.8V76.2M690.5 7.9V72.1M691.5 11.7V68.3M692.5 8.0V72.0M693.5 11.6V68.4M694.5 11.8V68.2M695.5 11.7V68.3M696.5 14.4V65.6M697.5 16.9V63.1M698.5 12.9V67.1M699.5 14.0V66.0M700.5 19.1V60.9M701.5 19.5V60.5M702.5 17.5V62.5M703.5 18.8V61.2M704.5 18.1V61.9M705.5 19.1V60.9M706.5 18.5V61.5M707.5 22.0V58.0M708.5 19.9V60.1M709.5 20.7V59.3M710.5 22.8V57.2M711.5 20.6V59.4M712.5 22.5V57.5M713.5 19.6V60.4M714.5 20.2V59.8M715.5 21.0V59.0M716.5 21.8V58.2M717.5 21.2V58.8M718.5 21.2V58.8M719.5 23.9V56.1M720.5 22.2V57.8M721.5 23.2V56.8M722.5 21.4V58.6M723.5 21.2V58.8M724.5 22.8V57.2M725.5 24.9V55.1M726.5 24.9V55.1M727.5 24.0V56.0M728.5 23.7V56.3M729.5 23.2V56.8M730.5 25.5V54.5M731.5 24.5V55.5M732.5 25.4V54.6M733.5 25.4V54.6M734.5 25.5V54.5M735.5 26.5V53.5M736.5 25.8V54.2M737.5 25.6V54.4M738.5 27.0V53.0M739.5 27.0V53.0M740.5 27.7V52.3M741.5 24.6V55.4M742.5 25.7V54.3M743.5 27.5V52.5M744.5 27.6V52.4M745.5 26.4V53.6M746.5 25.8V54.2M747.5 28.2V51.8M748.5 26.3V53.7M749.5 28.0V52.0M750.5 27.7V52.3M751.5 29.4V50.6M752.5 27.8V52.2M753.5 27.5V52.5M754.5 28.8V51.2M755.5 29.8V50.2M756.5 30.1V49.9M757.5 30.0V50.0M758.5 30.2V49.8M759.5 29.4V50.6M760.5 28.9V51.1M761.5 29.3V50.7M762.5 31.1V48.9M763.5 30.6V49.4M764.5 29.5V50.5M765.5 31.4V48.6M766.5 31.8V48.2M767.5 30.8V49.2M768.5 31.2V48.8M769.5 31.5V48.5M770.5 32.3V47.7M771.5 32.6V47.4M772.5 32.0V48.0M773.5 31.3V48.7M774.5 32.2V47.8M775.5 33.0V47.0M776.5 33.5V46.5M777.5 33.5V46.5M778.5 33.4V46.6M779.5 33.9V46.1M780.5 33.3V46.7M781.5 34.4V45.6M782.5 34.2V45.8M783.5 34.7V45.3M784.5 35.8V44.2M785.5 35.8V44.2M786.5 35.8V44.2M787.5 36.6V43.4M788.5 36.5V43.5M789.5 36.5V43.5M790.5 37.5V42.5M791.5 37.8V42.2M792.5 37.7V42.3M793.5 38.1V41.9M794.5 38.5V41.5M795.5 38.9V41.1M796.5 39.1V40.9M797.5 39.3V40.7M798.5 39.5V40.5M799.5 39.5V40.5"/>
+        </svg>
+        <div class="waveform-ticks num" aria-hidden="true"><span style="left:0.0%">0:00</span><span style="left:26.4%">1:00</span><span style="left:52.9%">2:00</span><span style="left:79.3%">3:00</span><span style="left:100%">3:47</span></div>
+      </figure>
+    </section>
+
+    <section>
+      <h4 class="section-label">Độ lớn & đỉnh</h4>
+      <div class="metrics">
+        <div class="metric"><span class="metric-label">Integrated</span><span class="metric-value num">-8.1<small>LUFS</small></span></div>
+        <div class="metric metric--warn"><span class="metric-label">True peak</span><span class="metric-value num">+0.3<small>dBTP</small></span><span class="metric-note"><svg class="icon" aria-hidden="true"><use href="#i-alert-triangle"/></svg>Vượt 0 dBTP</span></div>
+        <div class="metric"><span class="metric-label">LRA</span><span class="metric-value num">4.6<small>LU</small></span></div>
+      </div>
+    </section>
+
+    <section>
+      <h4 class="section-label">Gapless</h4>
+      <dl class="stats">
+        <div><dt>Bỏ đầu</dt><dd class="num">1 105 <small>mẫu</small></dd></div>
+        <div><dt>Bỏ cuối</dt><dd class="num">695 <small>mẫu</small></dd></div>
+        <div><dt>Tổng</dt><dd class="num">10 010 700 <small>mẫu</small></dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h4 class="section-label">Kỹ thuật</h4>
+      <dl class="kv">
+        <dt>Định dạng</dt><dd>MP3 · CBR <span class="num">320</span> kbps</dd>
+        <dt>Tần số mẫu</dt><dd class="num">44.1 kHz</dd>
+        <dt>Kênh</dt><dd>Stereo</dd>
+        <dt>Thời lượng</dt><dd class="num">3:47</dd>
+        <dt>Dung lượng</dt><dd class="num">8.8 MB</dd>
+        <dt>Track / Disc</dt><dd class="num">3 / 1</dd>
+        <dt>Nghệ sĩ album</dt><dd>Hà My</dd>
+        <dt>ID</dt><dd class="kv-id"><span class="mono truncate">9c41e07d5b2a8f13c6e0d94b7a215f08e3c6d1b29a4f7e05c8b3d26e1f9a0c7d</span><button class="btn btn--ghost btn--icon btn--xs" type="button" aria-label="Sao chép ID"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button></dd>
+        <dt>Tạo lúc</dt><dd class="num">21/11/2026 10:42</dd>
+        <dt>Cập nhật</dt><dd class="num">21/11/2026 10:58</dd>
+      </dl>
+    </section>
+  </div>
+</aside>
+    </div>
+  </div>
+  <div class="scrim">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <div class="dialog-head">
+      <div>
+        <h2 class="dialog-title" id="edit-title">Sửa thông tin bài hát</h2>
+        <p class="dialog-desc">Chỉ đổi tag và ảnh bìa. File nhạc trên R2 giữ nguyên.</p>
+      </div>
+      <button class="btn btn--ghost btn--icon" type="button" aria-label="Đóng"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="dialog-body">
+      <div class="cover-edit">
+        <span class="cover cover--edit" role="img" aria-label="Ảnh bìa Cao Nguyên" style="background:linear-gradient(135deg,hsl(22 62% 52%),hsl(70 70% 24%))"></span>
+        <div>
+          <p class="field-label">Ảnh bìa</p>
+          <p class="field-help">JPG hoặc PNG. Ảnh mới được lưu dưới khoá mới, ảnh cũ bị xoá nếu không còn bài nào dùng.</p>
+          <button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>Đổi ảnh bìa…</button>
+        </div>
+      </div>
+      <div class="form-grid">
+      <div class="field" style="grid-column:span 6">
+        <label class="field-label" for="e-title">Tiêu đề <span class="req" aria-hidden="true">*</span></label>
+        <input class="input" id="e-title" value="Gió Lộng Tây Nguyên" required>
+      </div>
+      <div class="field" style="grid-column:span 3">
+        <label class="field-label" for="e-artist">Nghệ sĩ</label>
+        <input class="input is-focus" id="e-artist" value="Hà My & Đồi Thông">
+      </div>
+      <div class="field" style="grid-column:span 3">
+        <label class="field-label" for="e-aa">Nghệ sĩ album</label>
+        <input class="input" id="e-aa" value="Hà My">
+      </div>
+      <div class="field" style="grid-column:span 4">
+        <label class="field-label" for="e-album">Album</label>
+        <input class="input" id="e-album" value="Cao Nguyên">
+      </div>
+      <div class="field" style="grid-column:span 2">
+        <label class="field-label" for="e-date">Ngày phát hành</label>
+        <input class="input" id="e-date" value="2024">
+      </div>
+      <div class="field" style="grid-column:span 4">
+        <label class="field-label" for="e-genre">Thể loại</label>
+        <input class="input" id="e-genre" value="Dân gian đương đại">
+      </div>
+      <div class="field" style="grid-column:span 1">
+        <label class="field-label" for="e-track">Track</label>
+        <input class="input num" id="e-track" value="3" inputmode="numeric">
+      </div>
+      <div class="field" style="grid-column:span 1">
+        <label class="field-label" for="e-disc">Disc</label>
+        <input class="input num" id="e-disc" value="1" inputmode="numeric">
+      </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <span class="dialog-foot-note"><span class="req">*</span> bắt buộc</span>
+      <button class="btn btn--secondary" type="button">Huỷ</button>
+      <button class="btn btn--primary" type="submit">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<h2 class="mk-caption">4 · Cài đặt <span>đã kiểm tra kết nối · toast sau khi lưu</span></h2>
+<div class="mk-frame">
+  <div class="app">
+    <header class="topbar">
+  <div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wave"/></svg></span>HiResAudio Upload</div>
+  <nav class="nav" aria-label="Điều hướng chính">
+    <a class="nav-item" href="#" ><svg class="icon" aria-hidden="true"><use href="#i-library"/></svg>Thư viện <span class="count num">8</span></a>
+    <a class="nav-item" href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Cài đặt</a>
+  </nav>
+  <div class="topbar-spacer"></div>
+  <span class="conn"><span class="conn-dot" aria-hidden="true"></span>Đã kết nối · <span class="mono">hires-library</span></span>
+  <button class="btn btn--primary" type="button" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+</header>
+    <main class="page">
+  <div class="page-head">
+    <h1 class="page-title page-title--lg">Cài đặt</h1>
+    <p class="page-desc">Kết nối tới bucket Cloudflare R2 chứa thư viện nhạc.</p>
+  </div>
+  <div class="settings-layout">
+    <form class="card settings-form" onsubmit="return false">
+      <h2 class="card-title"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg>Cloudflare R2</h2>
+      <div class="field">
+          <label class="field-label" for="s-acc">Account ID</label>
+          <input class="input mono" id="s-acc" value="4f1c2a9e7b3d4c58a1e6f0b2d9c37a64" spellcheck="false">
+          
+        </div>
+      <div class="field">
+          <label class="field-label" for="s-akid">Access Key ID</label>
+          <input class="input mono" id="s-akid" value="8d2e61f0a4c94b7e93d15a2c" spellcheck="false">
+          
+        </div>
+      <div class="field">
+          <label class="field-label" for="s-secret">Secret Access Key</label>
+          <div class="input-wrap"><input class="input mono" id="s-secret" type="text" value="••••a1b2" autocomplete="off" spellcheck="false"><button class="btn btn--ghost btn--icon btn--xs input-action" type="button" aria-label="Hiện secret" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></button></div>
+          <p class="field-help">Đang lưu secret kết thúc bằng <span class="mono">a1b2</span>. Để nguyên để giữ, hoặc nhập giá trị mới.</p>
+        </div>
+      <div class="field">
+          <label class="field-label" for="s-bucket">Bucket</label>
+          <input class="input mono" id="s-bucket" value="hires-library" spellcheck="false">
+          
+        </div>
+      <div class="field">
+          <label class="field-label" for="s-url">Public base URL</label>
+          <input class="input mono" id="s-url" value="https://pub-7c3e91d4a2.r2.dev" spellcheck="false" type="url">
+          <p class="field-help">App Android đọc <span class="mono">catalog.json</span> và file nhạc qua URL này.</p>
+        </div>
+      <div class="form-actions">
+        <p class="test-result test-result--ok" role="status"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Kết nối thành công · đọc được <span class="mono">catalog.json</span> (8 bài)</p>
+        <button class="btn btn--secondary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Kiểm tra kết nối</button>
+        <button class="btn btn--primary" type="submit">Lưu</button>
+      </div>
+    </form>
+    <aside class="card card--note">
+      <h2 class="card-title"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>Trước khi kết nối</h2>
+      <ul class="note-list">
+        <li>Bucket cần bật public access (r2.dev hoặc domain riêng).</li>
+        <li>Không bật nén cho audio và ảnh. Range request mặc định đã hoạt động.</li>
+        <li>Key chỉ nằm trong máy này, app Android không bao giờ cầm key.</li>
+      </ul>
+    </aside>
+  </div>
+  <div class="toast-region">
+    <div class="toast toast--success" role="status"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg><div><p class="toast-title">Đã lưu cài đặt</p><p class="toast-msg">Thư viện được tải lại từ bucket mới.</p></div><button class="btn btn--ghost btn--icon btn--xs" type="button" aria-label="Đóng thông báo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  </div>
+</main>
+  </div>
+</div>
+
+<h2 class="mk-caption">5 · Thành phần & trạng thái</h2>
+<div class="sheet">
+  <div class="sheet-card">
+    <h3 class="sheet-title">Quality badge</h3>
+    <p class="sheet-note">Màu + số vạch (4 → 1) + chữ: không dựa vào màu.</p>
+    <div class="sheet-stack">
+      <span class="qbadge qbadge--full"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span><span class="qbadge qbadge--high"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 245 · High (~V0–V2)</span><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 320 · nguồn ~128k</span><span class="qbadge qbadge--medium"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>MP3 160 · Medium</span><span class="qbadge qbadge--low"><span class="qmeter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>MP3 128 · Nguồn kém</span><span class="qbadge qbadge--none"><span class="qmeter" aria-hidden="true"><i></i><i></i><i></i><i></i></span>MP3 256</span>
+    </div>
+    <div class="sheet-stack"><span class="qbadge qbadge--full qbadge--lg"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>MP3 320 · Full band</span><span class="qbadge qbadge--high qbadge--sm"><span class="qmeter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>MP3 190 · High (~V0–V2)</span></div>
+  </div>
+
+  <div class="sheet-card">
+    <h3 class="sheet-title">Buttons</h3>
+    <div class="sheet-row">
+      <button class="btn btn--primary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+      <button class="btn btn--secondary" type="button">Kiểm tra kết nối</button>
+      <button class="btn btn--ghost" type="button">Bỏ chọn</button>
+    </div>
+    <div class="sheet-row">
+      <button class="btn btn--danger" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá 2 bài</button>
+      <button class="btn btn--danger-ghost" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá</button>
+      <button class="btn btn--secondary btn--icon" type="button" aria-label="Làm mới"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    </div>
+    <div class="sheet-row">
+      <button class="btn btn--primary is-focus" type="button">Focus</button>
+      <button class="btn btn--primary" type="button" disabled>Disabled</button>
+      <button class="btn btn--primary is-loading" type="button" aria-busy="true"><svg class="icon spin" aria-hidden="true"><use href="#i-loader"/></svg>Đang lưu…</button>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <h3 class="sheet-title">Form field</h3>
+    <div class="field"><label class="field-label" for="d1">Mặc định</label><input class="input" id="d1" value="Đêm Sài Gòn"></div>
+    <div class="field"><label class="field-label" for="d2">Focus</label><input class="input is-focus" id="d2" value="Ngọc Lan Vy"></div>
+    <div class="field"><label class="field-label" for="d3">Tiêu đề <span class="req" aria-hidden="true">*</span></label><input class="input" id="d3" value="" aria-invalid="true" aria-describedby="d3e"><p class="field-error" id="d3e"><svg class="icon" aria-hidden="true"><use href="#i-alert-circle"/></svg>Tiêu đề không được để trống.</p></div>
+    <div class="field"><label class="field-label" for="d4">Disabled</label><input class="input" id="d4" value="mp3" disabled></div>
+  </div>
+
+  <div class="sheet-card">
+    <h3 class="sheet-title">Trạng thái hàng đợi</h3>
+    <p class="sheet-note">Icon + chữ + màu. Lỗi kèm mã.</p>
+    <div class="sheet-stack">
+      <span class="stage stage--queued">Đang chờ</span>
+      <span class="stage stage--analysing">Đang phân tích</span>
+      <span class="stage stage--uploading">Đang tải lên · <span class="num">64%</span></span>
+      <span class="stage stage--done">Hoàn tất</span>
+      <span class="stage stage--duplicate">Trùng lặp</span>
+      <span class="stage stage--error">Lỗi · <span class="mono">TIMEOUT</span></span>
+    </div>
+    <div class="progress" role="progressbar" aria-label="Ví dụ tiến độ" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100"><span style="width:64%"></span></div>
+    <div class="progress progress--indeterminate" role="progressbar" aria-label="Ví dụ đang phân tích"><span></span></div>
+  </div>
+
+  <div class="sheet-card sheet-card--wide">
+    <h3 class="sheet-title">Xác nhận xoá</h3>
+    <div class="dialog dialog--sm" role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc">
+      <div class="dialog-head"><div>
+        <h2 class="dialog-title" id="del-title">Xoá 2 bài hát?</h2>
+        <p class="dialog-desc" id="del-desc">File nhạc, ảnh bìa và dữ liệu trên R2 sẽ bị xoá. App Android sẽ không thấy các bài này nữa. Không thể hoàn tác.</p>
+      </div></div>
+      <div class="dialog-body"><ul class="del-list"><li><b>Phố Cũ Mùa Đông</b> · Đoàn Bảo Nam</li><li><b>Nắng Ấm Xa Dần</b> · Vũ Đăng Khoa</li></ul></div>
+      <div class="dialog-foot"><button class="btn btn--secondary is-focus" type="button">Huỷ</button><button class="btn btn--danger" type="button"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Xoá 2 bài</button></div>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <h3 class="sheet-title">Drop zone</h3>
+    <div class="dropzone">
+      <span class="dropzone-icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-upload"/></svg></span>
+      <p class="dropzone-title">Kéo thả file MP3 vào đây</p>
+      <p class="dropzone-hint">hoặc</p>
+      <button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-file-audio"/></svg>Chọn file…</button>
+      <p class="dropzone-hint">Tối đa 200 MB · dài 1 giây đến 2 giờ</p>
+    </div>
+    <h3 class="sheet-title">Drop zone · kéo vào</h3>
+    <div class="dropzone is-dragover">
+      <span class="dropzone-icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-upload"/></svg></span>
+      <p class="dropzone-title">Thả để tải lên 3 file</p>
+      <p class="dropzone-hint">Chỉ nhận file .mp3</p>
+    </div>
+    <h3 class="sheet-title">Gapless · không có dữ liệu</h3>
+    <p class="hint"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Không có thông tin gapless</span></p>
+  </div>
+
+  <div class="sheet-card">
+    <h3 class="sheet-title">Toast</h3>
+    <div class="toast toast--success" role="status"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg><div><p class="toast-title">Đã lưu thay đổi</p><p class="toast-msg">Gió Lộng Tây Nguyên</p></div><button class="btn btn--ghost btn--icon btn--xs" type="button" aria-label="Đóng thông báo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div class="toast toast--error" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-alert-circle"/></svg><div><p class="toast-title">Không xoá được</p><p class="toast-msg">Lỗi ghi lên R2 (<span class="mono">STORAGE</span>). Catalog chưa thay đổi.</p></div><button class="btn btn--ghost btn--icon btn--xs" type="button" aria-label="Đóng thông báo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  </div>
+
+  <div class="sheet-card sheet-card--full">
+    <h3 class="sheet-title">Thư viện · trống / đang tải / lỗi catalog / chưa cấu hình</h3>
+    <div class="state-grid">
+      <div class="empty">
+        <span class="empty-icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-music"/></svg></span>
+        <p class="empty-title">Thư viện đang trống</p>
+        <p class="empty-desc">Kéo thả file MP3 vào cửa sổ hoặc bấm Tải lên.</p>
+        <button class="btn btn--primary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Tải lên</button>
+      </div>
+      <div class="skeleton-list" aria-busy="true" aria-label="Đang tải thư viện">
+        <div class="skeleton-row"><span class="skeleton skeleton--cover"></span><span class="skeleton-lines"><span class="skeleton" style="width:70%"></span><span class="skeleton" style="width:45%"></span></span><span class="skeleton skeleton--badge"></span></div><div class="skeleton-row"><span class="skeleton skeleton--cover"></span><span class="skeleton-lines"><span class="skeleton" style="width:55%"></span><span class="skeleton" style="width:30%"></span></span><span class="skeleton skeleton--badge"></span></div><div class="skeleton-row"><span class="skeleton skeleton--cover"></span><span class="skeleton-lines"><span class="skeleton" style="width:80%"></span><span class="skeleton" style="width:55%"></span></span><span class="skeleton skeleton--badge"></span></div><div class="skeleton-row"><span class="skeleton skeleton--cover"></span><span class="skeleton-lines"><span class="skeleton" style="width:62%"></span><span class="skeleton" style="width:37%"></span></span><span class="skeleton skeleton--badge"></span></div>
+      </div>
+      <div class="banner banner--danger" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-alert-triangle"/></svg><div><p class="banner-title">catalog.json bị lỗi</p><p class="banner-msg">Không đọc được catalog trên R2. Ứng dụng sẽ không ghi gì lên bucket cho tới khi catalog được sửa.</p><button class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Thử lại</button></div></div>
+      <div class="banner banner--info" role="status"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><div><p class="banner-title">Chưa cấu hình R2</p><p class="banner-msg">Nhập thông tin bucket để bắt đầu. Lần đầu chạy, ứng dụng mở thẳng trang Cài đặt.</p></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mockup-only: theme switcher (the app itself follows the system unless data-theme is set).
+  document.querySelectorAll('[data-set-theme]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = b.getAttribute('data-set-theme');
+      if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('[data-set-theme]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+    });
+  });
+  document.querySelectorAll('[data-indeterminate]').forEach(function (c) { c.indeterminate = true; });
+</script>
+</body>
+</html>
