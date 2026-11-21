@@ -158,7 +158,7 @@ export async function mountSettings(
     setBusy(testBtn, true, "Đang kiểm tra…", idle);
     try {
       await testConnection(read());
-      setResult("ok", `${icon("check-circle")}<span>Kết nối thành công · đọc được <span class="mono">catalog.json</span></span>`);
+      setResult("ok", `${icon("check-circle")}<span>Kết nối thành công · bucket truy cập được với thông tin này</span>`);
     } catch (e) {
       setResult("error", `${icon("alert-circle")}<span>${esc(typeof e === "string" ? e : String((e as { message?: string }).message ?? e))}</span>`);
     } finally {
