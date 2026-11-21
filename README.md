@@ -38,6 +38,24 @@ npm run tauri dev      # chạy ở chế độ dev
 npm run tauri build    # tạo installer trong src-tauri/target/release/bundle/
 ```
 
+Tắt app đang chạy trước khi build, nếu không Windows sẽ khoá `hiresaudio-upload.exe` (lỗi "Access is denied").
+
+## CI/CD (GitHub Actions)
+
+`.github/workflows/windows-installer.yml` chạy trên `windows-latest`:
+
+1. `npm ci` → `npm test` → `cargo clippy -D warnings` → `cargo test` (test R2 thật bị `#[ignore]`, CI không cần credentials).
+2. `npm run tauri build -- --bundles nsis` → bộ cài `HiResAudio Upload_<version>_x64-setup.exe`.
+
+| Kích hoạt | Kết quả |
+|---|---|
+| Push lên `master`, pull request, chạy tay (Actions → Run workflow) | Bộ cài trong artifact `windows-installer` của lần chạy |
+| Push tag `v<version>` | Như trên + **draft** GitHub Release đính kèm bộ cài |
+
+Phát hành: tăng `version` trong `src-tauri/tauri.conf.json` (và `package.json`, `src-tauri/Cargo.toml`), commit, rồi `git tag v0.1.1 && git push origin v0.1.1`. Tag phải khớp version, nếu không job dừng. Kiểm tra draft release rồi bấm Publish.
+
+Bộ cài chưa ký số (code signing), nên Windows SmartScreen sẽ cảnh báo khi cài lần đầu ("More info" → "Run anyway").
+
 ## Cấu trúc R2 và catalog (hợp đồng cho app Android)
 
 | Key | Content-Type | Cache-Control |
