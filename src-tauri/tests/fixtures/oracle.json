@@ -1,0 +1,10 @@
+{
+  "pink_320.mp3": { "lufs": -34.8, "lra": 0.1, "truePeakDbtp": -23.6 },
+  "pink_128to320.mp3": { "lufs": -35.5, "lra": 0.1, "truePeakDbtp": -24.1 },
+  "pink_loud.mp3": { "lufs": -4.0, "lra": 0.2, "truePeakDbtp": 1.0 },
+  "pink_v2.mp3": { "lufs": -34.8, "lra": 0.1, "truePeakDbtp": -23.0 },
+  "pink_128.mp3": { "lufs": -35.5, "lra": 0.1, "truePeakDbtp": -24.1 },
+  "cover_big.mp3": { "lufs": -34.8, "lra": 0.1, "truePeakDbtp": -23.6 },
+  "cover_small.mp3": { "lufs": -34.8, "lra": 0.1, "truePeakDbtp": -23.6 },
+  "noxing_notag.mp3": { "lufs": -35.2, "lra": 0.0, "truePeakDbtp": -25.3 }
+}
