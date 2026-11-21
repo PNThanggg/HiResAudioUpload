@@ -68,8 +68,29 @@ fn validate_requires_http_public_base_url() {
     assert!(sample().validate().is_ok());
     assert!(Settings { public_base_url: "HTTP://cdn.x.com".into(), ..sample() }.validate().is_ok());
     assert!(Settings { public_base_url: "".into(), ..sample() }.validate().is_ok());
-    for bad in ["cdn.x.com", "ftp://cdn.x.com", "javascript:alert(1)", "https:/x"] {
+    assert!(Settings { public_base_url: "https://cdn.x.com/music".into(), ..sample() }.validate().is_ok());
+    for bad in [
+        "cdn.x.com",
+        "ftp://cdn.x.com",
+        "javascript:alert(1)",
+        "https:/x",
+        "https://",
+        "http:///path",
+        "https://?q",
+        "https://a b.com",
+    ] {
         let e = Settings { public_base_url: bad.into(), ..sample() }.validate().unwrap_err();
         assert!(e.contains("http://"), "{bad}: {e}");
     }
+}
+
+#[tokio::test]
+async fn init_state_ignores_invalid_saved_settings() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("settings.json");
+    let bad = Settings { public_base_url: "https://".into(), ..sample() };
+    save(&path, &bad).unwrap();
+    let state = hires_upload_lib::commands::init_state(path).await;
+    assert!(state.library.read().await.is_none());
+    assert_eq!(*state.settings.read().await, bad.normalize());
 }

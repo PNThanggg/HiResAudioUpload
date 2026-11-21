@@ -17,6 +17,21 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
+/// Base of Tauri's `app_config_dir()` on each desktop OS.
+fn app_config_dir() -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    let home = || std::env::var_os("HOME").map(PathBuf::from);
+    if cfg!(windows) {
+        std::env::var_os("APPDATA").map(PathBuf::from)
+    } else if cfg!(target_os = "macos") {
+        home().map(|h| h.join("Library").join("Application Support"))
+    } else {
+        std::env::var_os("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .or_else(|| home().map(|h| h.join(".config")))
+    }
+}
+
 fn credentials() -> Option<Settings> {
     let get = |k: &str| std::env::var(k).ok().filter(|v| !v.trim().is_empty());
     let from_env = (|| {
@@ -31,10 +46,7 @@ fn credentials() -> Option<Settings> {
     let s = match from_env {
         Some(s) => s,
         None => {
-            let dir = std::env::var_os("APPDATA")
-                .map(std::path::PathBuf::from)
-                .or_else(|| std::env::var_os("HOME").map(|h| std::path::Path::new(&h).join(".config")))?;
-            settings::load(&dir.join("audios.hi-res.upload").join("settings.json"))
+            settings::load(&app_config_dir()?.join("audios.hi-res.upload").join("settings.json"))
         }
     };
     let s = s.normalize();

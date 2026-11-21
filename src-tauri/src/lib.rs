@@ -8,16 +8,18 @@ pub mod settings;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::Manager;
-    tauri::Builder::default()
-        // Must be registered first: a second launch only focuses the running window, so two
-        // instances never race on the same bucket.
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
-        }))
+    let builder = tauri::Builder::default();
+    // Must be registered first: a second launch only focuses the running window, so two
+    // instances never race on the same bucket. Desktop only (the crate is desktop-only).
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    }));
+    builder
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");

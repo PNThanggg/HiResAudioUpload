@@ -189,7 +189,8 @@ async fn build_library(s: &Settings, lock: &CatalogLock) -> Arc<Library> {
 pub async fn init_state(settings_path: PathBuf) -> AppState {
     let s = settings::load(&settings_path).normalize();
     let catalog_lock = CatalogLock::default();
-    let library = if s.is_complete() {
+    // An invalid saved file stays visible in Settings but leaves the app unconfigured.
+    let library = if s.is_complete() && s.validate().is_ok() {
         Some(build_library(&s, &catalog_lock).await)
     } else {
         None
@@ -219,8 +220,10 @@ pub async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String
 pub async fn save_settings(state: State<'_, AppState>, s: Settings) -> Result<(), String> {
     let s = resolve_incoming(&state, s).await;
     s.validate()?;
-    settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
+    // Hold the write lock across the file write so concurrent saves cannot leave the file
+    // and the live settings pointing at different buckets.
     let mut current = state.settings.write().await;
+    settings::save(&state.settings_path, &s).map_err(|e| e.to_string())?;
     if *current == s {
         return Ok(());
     }

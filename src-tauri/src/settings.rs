@@ -37,10 +37,16 @@ impl Settings {
         .all(|f| !f.trim().is_empty())
     }
 
-    /// Rejects a non-empty `public_base_url` that is not an `http://` or `https://` URL.
+    /// Rejects a non-empty `public_base_url` that is not an `http://` or `https://` URL
+    /// with a host.
     pub fn validate(&self) -> Result<(), String> {
         let url = self.public_base_url.trim().to_ascii_lowercase();
-        if url.is_empty() || url.starts_with("http://") || url.starts_with("https://") {
+        let host = url
+            .strip_prefix("http://")
+            .or_else(|| url.strip_prefix("https://"))
+            .and_then(|rest| rest.split(['/', '?', '#']).next())
+            .filter(|h| !h.is_empty() && !h.contains(char::is_whitespace));
+        if url.is_empty() || host.is_some() {
             Ok(())
         } else {
             Err("Public base URL phải bắt đầu bằng http:// hoặc https://".to_string())
