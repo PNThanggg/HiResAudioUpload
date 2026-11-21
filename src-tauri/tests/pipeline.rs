@@ -59,15 +59,19 @@ async fn missing_file_is_internal() {
 fn perf_4min() {
     let path = std::env::temp_dir().join("hires_perf_4min.mp3");
     if !path.exists() {
+        let tmp = std::env::temp_dir().join("hires_perf_4min.tmp.mp3");
         let ffmpeg = std::env::var("FFMPEG").unwrap_or_else(|_| "ffmpeg".into());
         let status = std::process::Command::new(ffmpeg)
             .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i"])
             .arg("anoisesrc=color=pink:sample_rate=44100:amplitude=0.1:duration=240:seed=7")
             .args(["-ac", "2", "-c:a", "libmp3lame", "-b:a", "320k"])
-            .arg(&path)
-            .status()
-            .expect("run ffmpeg (set FFMPEG)");
-        assert!(status.success(), "ffmpeg failed");
+            .arg(&tmp)
+            .status();
+        if !matches!(&status, Ok(s) if s.success()) {
+            let _ = std::fs::remove_file(&tmp);
+            panic!("ffmpeg failed (set FFMPEG): {status:?}");
+        }
+        std::fs::rename(&tmp, &path).unwrap();
     }
     let src = std::fs::read(&path).unwrap();
     let start = std::time::Instant::now();

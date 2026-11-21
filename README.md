@@ -71,7 +71,7 @@ cargo test --test r2_live -- --ignored --nocapture     # kết nối + put/get/d
 cargo test --test e2e_live -- --ignored --nocapture    # upload, sửa, xoá qua public URL
 ```
 
-`e2e_live` chỉ xoá những bài do chính nó thêm vào.
+`e2e_live` chỉ sửa và xoá những bài do chính nó thêm vào. Không dùng app trên cùng bucket trong lúc `e2e_live` chạy (catalog được ghi đè theo kiểu read-modify-write).
 
 Test hiệu năng (4 phút, 320k stereo, phải xử lý < 4 s; cần ffmpeg):
 
