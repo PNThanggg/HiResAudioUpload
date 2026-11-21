@@ -36,6 +36,9 @@ pub struct MemoryStorage {
     objects: Mutex<BTreeMap<String, StoredObject>>,
     /// When set, puts whose key contains this substring fail.
     pub fail_puts_matching: Mutex<Option<String>>,
+    /// When set, puts whose key contains this substring are stored, then report an error
+    /// (a write the server committed but the client saw fail).
+    pub fail_after_puts_matching: Mutex<Option<String>>,
 }
 
 impl MemoryStorage {
@@ -71,6 +74,11 @@ impl Storage for MemoryStorage {
             key.to_string(),
             (body, content_type.to_string(), cache_control.to_string()),
         );
+        if let Some(pat) = self.fail_after_puts_matching.lock().unwrap().as_deref()
+            && key.contains(pat)
+        {
+            anyhow::bail!("injected error after storing {key}");
+        }
         Ok(())
     }
 
@@ -216,18 +224,27 @@ fn cover_refs(tracks: &[TrackSummary], key: &str) -> bool {
     tracks.iter().any(|t| t.cover_key.as_deref() == Some(key))
 }
 
+/// Serializes catalog read-modify-write cycles; share one across every `Library` on a bucket.
+pub type CatalogLock = Arc<tokio::sync::Mutex<()>>;
+
 pub struct Library {
     storage: Arc<dyn Storage>,
     public_base: String,
-    lock: tokio::sync::Mutex<()>,
+    lock: CatalogLock,
 }
 
 impl Library {
+    /// A library with its own catalog lock.
     pub fn new(storage: Arc<dyn Storage>, public_base: String) -> Self {
+        Self::with_lock(storage, public_base, CatalogLock::default())
+    }
+
+    /// A library that serializes its catalog writes with every other holder of `lock`.
+    pub fn with_lock(storage: Arc<dyn Storage>, public_base: String, lock: CatalogLock) -> Self {
         Self {
             storage,
             public_base,
-            lock: tokio::sync::Mutex::new(()),
+            lock,
         }
     }
 
@@ -346,30 +363,54 @@ impl Library {
             .put(&audio_key, p.served, "audio/mpeg", IMMUTABLE)
             .await?;
 
-        let rest: Result<()> = async {
+        let staged: Result<()> = async {
             if let (Some(c), Some(k)) = (&p.cover, &cover_key) {
                 self.storage
                     .put(k, c.bytes.clone(), c.mime, IMMUTABLE)
                     .await?;
             }
-            self.put_meta(&record).await?;
-            let mut next = cat.clone();
-            next.tracks.push(summary.clone());
-            self.save(next).await
+            self.put_meta(&record).await
         }
         .await;
-
-        if let Err(e) = rest {
-            let _ = self.storage.delete(&audio_key).await;
-            let _ = self.storage.delete(&meta_key(&p.id)).await;
-            if let Some(k) = &cover_key
-                && !cover_refs(&cat.tracks, k)
-            {
-                let _ = self.storage.delete(k).await;
-            }
+        if let Err(e) = staged {
+            self.roll_back_add(&cat, &p.id, &audio_key, cover_key.as_deref())
+                .await;
             return Err(e);
         }
+
+        let mut next = cat.clone();
+        next.tracks.push(summary.clone());
+        if let Err(e) = self.save(next).await {
+            // The PUT may have been committed even though we saw an error: only roll back
+            // when the catalog provably lacks the track. A dangling entry is worse than orphans.
+            match self.load().await {
+                Ok(now) if now.tracks.iter().any(|t| t.id == p.id) => {}
+                Ok(_) => {
+                    self.roll_back_add(&cat, &p.id, &audio_key, cover_key.as_deref())
+                        .await;
+                    return Err(e);
+                }
+                Err(_) => return Err(e),
+            }
+        }
         Ok(AddOutcome::Added(summary))
+    }
+
+    /// Deletes the objects of an add whose catalog entry was never written.
+    async fn roll_back_add(
+        &self,
+        cat: &Catalog,
+        id: &str,
+        audio_key: &str,
+        cover_key: Option<&str>,
+    ) {
+        let _ = self.storage.delete(audio_key).await;
+        let _ = self.storage.delete(&meta_key(id)).await;
+        if let Some(k) = cover_key
+            && !cover_refs(&cat.tracks, k)
+        {
+            let _ = self.storage.delete(k).await;
+        }
     }
 
     pub async fn update(

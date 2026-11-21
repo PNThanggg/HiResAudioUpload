@@ -240,3 +240,84 @@ async fn shared_cover_survives_single_delete() {
     assert!(!st.keys().contains(&format!("audio/{}.mp3", b.id)));
     assert!(lib.list().await.unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn ambiguous_catalog_save_keeps_objects() {
+    let (st, lib) = setup();
+    *st.fail_after_puts_matching.lock().unwrap() = Some("catalog.json".to_string());
+    let p = track("cover_small");
+    let t = added(lib.add(p.clone()).await.unwrap());
+    *st.fail_after_puts_matching.lock().unwrap() = None;
+    assert_eq!(lib.list().await.unwrap(), vec![t.clone()]);
+    let keys = st.keys();
+    for k in [
+        t.audio_key.clone(),
+        t.cover_key.clone().unwrap(),
+        format!("meta/{}.json", p.id),
+    ] {
+        assert!(keys.contains(&k), "missing {k}");
+    }
+    assert_eq!(lib.detail(&p.id).await.unwrap().summary, t);
+}
+
+/// Yields to the scheduler before every call so concurrent library operations interleave.
+struct YieldingStorage(Arc<MemoryStorage>);
+
+#[async_trait::async_trait]
+impl Storage for YieldingStorage {
+    async fn put(&self, key: &str, body: Vec<u8>, ct: &str, cc: &str) -> anyhow::Result<()> {
+        tokio::task::yield_now().await;
+        self.0.put(key, body, ct, cc).await
+    }
+    async fn get(&self, key: &str) -> anyhow::Result<Option<Vec<u8>>> {
+        tokio::task::yield_now().await;
+        self.0.get(key).await
+    }
+    async fn delete(&self, key: &str) -> anyhow::Result<()> {
+        tokio::task::yield_now().await;
+        self.0.delete(key).await
+    }
+}
+
+#[tokio::test]
+async fn libraries_sharing_a_lock_serialize_catalog_writes() {
+    let mem = Arc::new(MemoryStorage::default());
+    let storage: Arc<dyn Storage> = Arc::new(YieldingStorage(mem.clone()));
+    let lock = CatalogLock::default();
+    let base = "https://cdn.example.com".to_string();
+    let a = Library::with_lock(storage.clone(), base.clone(), lock.clone());
+    let b = Library::with_lock(storage, base, lock);
+
+    let old = added(a.add(track("pink_128")).await.unwrap());
+    let (add, del) = tokio::join!(a.add(track("pink_320")), b.delete(std::slice::from_ref(&old.id)));
+    let new = added(add.unwrap());
+    del.unwrap();
+
+    let ids: Vec<String> = a.list().await.unwrap().into_iter().map(|t| t.id).collect();
+    assert_eq!(ids, vec![new.id.clone()], "deleted track must stay deleted");
+    for t in a.list().await.unwrap() {
+        assert!(mem.get(&t.audio_key).await.unwrap().is_some(), "dangling {}", t.id);
+        assert!(a.detail(&t.id).await.is_ok(), "dangling meta {}", t.id);
+    }
+}
+
+#[tokio::test]
+async fn summary_json_matches_spec_contract() {
+    let (_st, lib) = setup();
+    let t = added(lib.add(track("noxing_notag")).await.unwrap());
+    let v = serde_json::to_value(&t).unwrap();
+    let mut keys: Vec<&str> = v.as_object().unwrap().keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    let mut spec = vec![
+        "id", "sourceSha256", "audioKey", "coverKey", "audioUrl", "coverUrl", "sizeBytes",
+        "codec", "bitrate", "vbr", "sampleRate", "channels", "durationMs", "title", "artist",
+        "album", "albumArtist", "date", "genre", "track", "disc", "integratedLufs",
+        "truePeakDbtp", "lra", "effectiveBandwidthHz", "qualityHint", "trimStart", "trimEnd",
+        "totalSamples", "analysisVersion", "createdAt", "updatedAt",
+    ];
+    spec.sort_unstable();
+    assert_eq!(keys, spec);
+    for k in ["coverKey", "coverUrl", "trimStart", "trimEnd", "totalSamples"] {
+        assert!(v[k].is_null(), "{k} should serialize as null, got {}", v[k]);
+    }
+}
