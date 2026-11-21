@@ -1,4 +1,9 @@
-use super::lame::first_frame;
+use std::sync::atomic::AtomicBool;
+
+use super::analyze::analyze;
+use super::lame::{first_frame, read_gapless, Gapless};
+use super::REMUX_COVER_BYTES;
+use crate::error::{ErrorCode, PipelineError};
 
 /// Strips a trailing APEv2 tag ending at `end`, never cutting before `start`.
 fn strip_ape(b: &[u8], start: usize, end: usize) -> usize {
@@ -38,4 +43,29 @@ pub fn strip_tags(b: &[u8]) -> Vec<u8> {
 
 pub fn audio_payload_len(b: &[u8]) -> usize {
     audio_range(b).map_or(0, |(s, e)| e - s)
+}
+
+/// Builds the file to serve: the source bytes, or (cover > `REMUX_COVER_BYTES`)
+/// the source with tags stripped, verified to decode to identical PCM with the
+/// same gapless info. Returns `(served, remuxed)`.
+pub fn build_served(
+    source: &[u8],
+    cover_len: Option<usize>,
+    source_pcm: &[u8; 32],
+    gapless: &Option<Gapless>,
+    cancel: &AtomicBool,
+) -> Result<(Vec<u8>, bool), PipelineError> {
+    if !cover_len.is_some_and(|n| n > REMUX_COVER_BYTES) {
+        return Ok((source.to_vec(), false));
+    }
+    let served = strip_tags(source);
+    let fail = |what: &str| PipelineError::new(ErrorCode::Internal, format!("remux verification failed: {what}"));
+    let re = analyze(&served, cancel)?;
+    if &re.pcm_sha256 != source_pcm {
+        return Err(fail("decoded PCM differs"));
+    }
+    if &read_gapless(&served) != gapless {
+        return Err(fail("gapless info differs"));
+    }
+    Ok((served, true))
 }
